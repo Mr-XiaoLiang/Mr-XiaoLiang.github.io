@@ -1,0 +1,74 @@
+:root {
+  --bg: #05060f;
+  --text: #f6f7fb;
+  --text-secondary: rgb(246 247 251 / 0.72);
+  --glass-bg: rgb(14 18 34 / 0.52);
+  --glass-border: rgb(255 255 255 / 0.16);
+  --icon-tile-bg: rgb(255 255 255 / 0.12);
+  --icon-border: rgb(255 255 255 / 0.1);
+  --dot: rgb(255 255 255 / 0.38);
+  --dot-active: rgb(255 255 255 / 0.92);
+  color-scheme: dark;
+}
+
+/* 用户显式选择亮色，或自动模式下壁纸为亮色时，切换为亮色文字方案 */
+:root[data-theme='light'],
+:root[data-theme='auto'][data-scheme='light'] {
+  --bg: #d8d5cb;
+  --text: #1c1f27;
+  --text-secondary: rgb(28 31 39 / 0.68);
+  --glass-bg: rgb(255 255 255 / 0.55);
+  --glass-border: rgb(0 0 0 / 0.08);
+  --icon-tile-bg: rgb(255 255 255 / 0.45);
+  --icon-border: rgb(0 0 0 / 0.06);
+  --dot: rgb(0 0 0 / 0.25);
+  --dot-active: rgb(0 0 0 / 0.62);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+#app {
+  height: 100dvh;
+}
+
+/* 壁纸上的可读性遮罩，随明暗方案调整强度 */
+.wallpaper-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.16), transparent 20%, transparent 80%, rgb(0 0 0 / 0.2));
+}
+
+:root[data-theme='auto'][data-scheme='light'] .wallpaper-scrim,
+:root[data-theme='light'] .wallpaper-scrim {
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.08), transparent 20%, transparent 80%, rgb(0 0 0 / 0.1));
+}
+
+/* SortableJS 拖拽视觉：原位占位淡化，拖动项加投影（不使用 transform，避免与拖拽位移冲突） */
+.icon-ghost {
+  opacity: 0.3;
+}
+
+.icon-dragging {
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.35);
+}
