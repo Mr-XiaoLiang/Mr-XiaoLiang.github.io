@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { WidgetSize } from '../../core/types';
-
-withDefaults(defineProps<{ size?: WidgetSize }>(), { size: 'm' });
 
 const today = new Date();
 const view = ref({ year: today.getFullYear(), month: today.getMonth() });
@@ -32,7 +29,7 @@ function isToday(day: number | null): boolean {
 </script>
 
 <template>
-  <div class="calendar-widget" :class="`size-${size}`">
+  <div class="calendar-widget">
     <span class="calendar-title">{{ title }}</span>
     <div class="calendar-grid">
       <span v-for="name in WEEKDAYS" :key="name" class="calendar-weekday">{{ name }}</span>
@@ -51,13 +48,17 @@ function isToday(day: number | null): boolean {
 .calendar-widget {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: 4%;
+  width: 100%;
+  height: 100%;
+  padding: 8%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .calendar-title {
-  color: var(--text-secondary);
-  font-size: 12px;
+  color: rgb(255 255 255 / 0.85);
+  font-size: clamp(10px, 7cqh, 18px);
   font-weight: 600;
 }
 
@@ -65,22 +66,24 @@ function isToday(day: number | null): boolean {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   grid-auto-rows: minmax(0, 1fr);
-  gap: 2px;
+  gap: 2%;
   flex: 1;
   min-height: 0;
 }
 
 .calendar-weekday {
-  color: var(--text-secondary);
-  font-size: 10px;
-  text-align: center;
+  display: grid;
+  place-items: center;
+  color: rgb(255 255 255 / 0.65);
+  font-size: clamp(8px, 5cqh, 13px);
 }
 
 .calendar-day {
   display: grid;
   place-items: center;
   min-height: 0;
-  font-size: 11px;
+  color: #fff;
+  font-size: clamp(8px, 5.5cqh, 14px);
   font-variant-numeric: tabular-nums;
 }
 
@@ -89,17 +92,9 @@ function isToday(day: number | null): boolean {
 }
 
 .calendar-day.today {
-  border-radius: 8px;
-  background: #3b6ef5;
-  color: #fff;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.92);
+  color: #1b1e26;
   font-weight: 700;
-}
-
-.calendar-widget.size-l .calendar-day {
-  font-size: 13px;
-}
-
-.calendar-widget.size-l .calendar-title {
-  font-size: 14px;
 }
 </style>

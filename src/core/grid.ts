@@ -1,24 +1,26 @@
-import type { Density, LayoutSetting } from './types';
+import type { Density } from './types';
 
-export interface GridMetrics {
-  /** 每行图标数 */
-  cols: number;
-  /** 每页可容纳行数 */
-  rows: number;
+export interface LayoutMetrics {
   /** 单元格边长（px） */
   cell: number;
-  /** 网格间距（px） */
+  /** 格间距（px） */
   gap: number;
+  /** 屏间距（px），大于格间距 */
+  screenGap: number;
+  /** 当前宽度可放格数 */
+  cellsFit: number;
+  /** 生效屏宽（格），不超过可放格数且不小于 4 */
+  screenWidth: number;
 }
 
-export interface GridInput {
+export interface LayoutInput {
   /** 桌面可用宽度（px） */
   width: number;
-  /** 桌面可用高度（px） */
-  height: number;
-  layout: LayoutSetting;
   /** 左右安全边距（px） */
   paddingX: number;
+  density: Density;
+  /** 配置的屏宽（格），4-8 */
+  screenWidth: number;
 }
 
 /** 三档密度对应的单元格基准尺寸与间距 */
@@ -34,33 +36,45 @@ const GRID_GAP: Record<Density, number> = {
   compact: 10,
 };
 
-export const GRID_LIMITS = {
-  minCols: 3,
-  maxCols: 12,
-  minRows: 2,
-  maxRows: 8,
-} as const;
+/** 屏宽边界：最小 4 格，最大 8 格 */
+export const SCREEN_WIDTH_LIMITS = { min: 4, max: 8 };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-/** 按屏幕尺寸与密度计算网格行列；manual 模式优先使用用户指定值 */
-export function computeGrid(input: GridInput): GridMetrics {
-  const { width, height, layout, paddingX } = input;
-  const cell = CELL_SIZE[layout.density];
-  const gap = GRID_GAP[layout.density];
+/**
+ * 布局计算：
+ * 1. 按密度取格尺寸，计算当前宽度可放格数
+ * 2. 可放格数不足 4 时缩小格尺寸，硬凑 4 格
+ * 3. 屏宽取配置值，收敛到 [4, 可放格数]
+ */
+export function computeLayout(input: LayoutInput): LayoutMetrics {
+  const { width, paddingX, density } = input;
+  let cell = CELL_SIZE[density];
+  const gap = GRID_GAP[density];
+  const screenGap = gap * 3;
 
-  let cols = Math.floor((Math.max(0, width - paddingX * 2) + gap) / (cell + gap));
-  let rows = Math.floor((Math.max(0, height) + gap) / (cell + gap));
+  const usable = Math.max(0, width - paddingX * 2);
+  let cellsFit = Math.floor((usable + gap) / (cell + gap));
 
-  cols = clamp(cols, GRID_LIMITS.minCols, GRID_LIMITS.maxCols);
-  rows = clamp(rows, GRID_LIMITS.minRows, GRID_LIMITS.maxRows);
-
-  if (layout.mode === 'manual') {
-    if (layout.cols && layout.cols > 0) cols = clamp(Math.round(layout.cols), GRID_LIMITS.minCols, GRID_LIMITS.maxCols);
-    if (layout.rows && layout.rows > 0) rows = clamp(Math.round(layout.rows), GRID_LIMITS.minRows, GRID_LIMITS.maxRows);
+  // 不足 4 格时缩小格尺寸，保证最小 4 格
+  if (cellsFit < 4) {
+    cell = Math.max(36, Math.floor((usable - 3 * gap) / 4));
+    cellsFit = Math.floor((usable + gap) / (cell + gap));
+    if (cellsFit < 4) cellsFit = 4;
   }
 
-  return { cols, rows, cell, gap };
+  const screenWidth = clamp(
+    Math.round(input.screenWidth),
+    SCREEN_WIDTH_LIMITS.min,
+    Math.min(SCREEN_WIDTH_LIMITS.max, Math.max(SCREEN_WIDTH_LIMITS.min, cellsFit)),
+  );
+
+  return { cell, gap, screenGap, cellsFit, screenWidth };
+}
+
+/** 屏的像素宽度 */
+export function screenWidthPx(metrics: LayoutMetrics): number {
+  return metrics.screenWidth * metrics.cell + (metrics.screenWidth - 1) * metrics.gap;
 }

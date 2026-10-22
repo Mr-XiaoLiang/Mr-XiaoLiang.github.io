@@ -6,7 +6,7 @@ const { exit } = useEditMode();
 
 <template>
   <div class="edit-toolbar">
-    <span class="edit-hint">拖动图标调整位置，可跨页移动或放入程序坞</span>
+    <span class="edit-hint">拖动磁块调整位置，可跨屏移动；拖拽右下角手柄调整尺寸</span>
     <button type="button" class="edit-done" @click="exit">完成</button>
   </div>
 </template>

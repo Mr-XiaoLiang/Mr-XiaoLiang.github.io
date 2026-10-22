@@ -4,6 +4,10 @@ export interface PresetApp {
   name: string;
   url: string;
   icon: string;
+  /** 全覆盖图，优先于 icon */
+  fullIcon?: string;
+  /** 磁块背景色 */
+  color?: string;
   description?: string;
   category?: string;
 }
@@ -30,6 +34,8 @@ export function presetToApp(preset: PresetApp): AppItem {
     name: preset.name,
     url: preset.url,
     icon: preset.icon ?? '',
+    fullIcon: preset.fullIcon,
+    color: preset.color,
     description: preset.description,
     category: preset.category,
     source: 'preset',

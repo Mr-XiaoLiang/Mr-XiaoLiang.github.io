@@ -64,11 +64,7 @@ body {
   background: linear-gradient(180deg, rgb(0 0 0 / 0.08), transparent 20%, transparent 80%, rgb(0 0 0 / 0.1));
 }
 
-/* SortableJS 拖拽视觉：原位占位淡化，拖动项加投影（不使用 transform，避免与拖拽位移冲突） */
-.icon-ghost {
+/* SortableJS 拖拽占位淡化（磁块 ghost） */
+.tile-ghost {
   opacity: 0.3;
-}
-
-.icon-dragging {
-  box-shadow: 0 12px 28px rgb(0 0 0 / 0.35);
 }

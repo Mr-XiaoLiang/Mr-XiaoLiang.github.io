@@ -1,24 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useConfigStore } from '../../stores/config';
-import { useWindowSize } from '../../composables/useWindowSize';
-import { computeGrid, GRID_LIMITS } from '../../core/grid';
-import type { Density, LayoutSetting } from '../../core/types';
+import { SCREEN_WIDTH_LIMITS } from '../../core/grid';
+import type { Density } from '../../core/types';
 
 const store = useConfigStore();
-const { width, height } = useWindowSize();
 
-const layout = computed<LayoutSetting>(() => store.config?.layout ?? { mode: 'auto', density: 'regular' });
-
-// 估算桌面可用区域：扣除底部程序坞、圆点指示器与内边距
-const autoMetrics = computed(() =>
-  computeGrid({
-    width: Math.max(0, width.value - 48),
-    height: Math.max(0, height.value - 150),
-    layout: layout.value,
-    paddingX: 24,
-  }),
-);
+const layout = computed(() => store.config?.layout ?? { density: 'regular' as Density, screenWidth: 6 });
 
 const DENSITIES: { value: Density; label: string }[] = [
   { value: 'loose', label: '宽松' },
@@ -26,29 +14,10 @@ const DENSITIES: { value: Density; label: string }[] = [
   { value: 'compact', label: '紧凑' },
 ];
 
-const cols = computed(() => layout.value.cols ?? autoMetrics.value.cols);
-const rows = computed(() => layout.value.rows ?? autoMetrics.value.rows);
-
-function setMode(mode: 'auto' | 'manual') {
-  // 切到手动模式时，用当前自动计算结果作为初值
-  if (mode === 'manual' && (layout.value.cols == null || layout.value.rows == null)) {
-    store.updateLayout({ mode, cols: autoMetrics.value.cols, rows: autoMetrics.value.rows });
-    return;
-  }
-  store.updateLayout({ mode });
-}
-
-function onColsChange(event: Event) {
-  const value = Number.parseInt((event.target as HTMLInputElement).value, 10);
-  if (Number.isNaN(value)) return;
-  store.updateLayout({ cols: Math.min(Math.max(value, GRID_LIMITS.minCols), GRID_LIMITS.maxCols) });
-}
-
-function onRowsChange(event: Event) {
-  const value = Number.parseInt((event.target as HTMLInputElement).value, 10);
-  if (Number.isNaN(value)) return;
-  store.updateLayout({ rows: Math.min(Math.max(value, GRID_LIMITS.minRows), GRID_LIMITS.maxRows) });
-}
+const SCREEN_WIDTHS = Array.from(
+  { length: SCREEN_WIDTH_LIMITS.max - SCREEN_WIDTH_LIMITS.min + 1 },
+  (_, index) => SCREEN_WIDTH_LIMITS.min + index,
+);
 </script>
 
 <template>
@@ -72,37 +41,21 @@ function onRowsChange(event: Event) {
     </div>
 
     <div class="field-block">
-      <span class="field-label">行列数量</span>
+      <span class="field-label">屏宽（格 / 屏）</span>
       <div class="tab-row">
         <button
+          v-for="width in SCREEN_WIDTHS"
+          :key="width"
           type="button"
           class="tab-btn"
-          :class="{ active: layout.mode === 'auto' }"
-          @click="setMode('auto')"
+          :class="{ active: layout.screenWidth === width }"
+          @click="store.updateLayout({ screenWidth: width })"
         >
-          自动适配
+          {{ width }}
         </button>
-        <button
-          type="button"
-          class="tab-btn"
-          :class="{ active: layout.mode === 'manual' }"
-          @click="setMode('manual')"
-        >
-          手动指定
-        </button>
-      </div>
-      <div v-if="layout.mode === 'manual'" class="manual-row">
-        <label class="number-field">
-          <span>列数</span>
-          <input type="number" :min="GRID_LIMITS.minCols" :max="GRID_LIMITS.maxCols" :value="cols" @change="onColsChange" />
-        </label>
-        <label class="number-field">
-          <span>行数</span>
-          <input type="number" :min="GRID_LIMITS.minRows" :max="GRID_LIMITS.maxRows" :value="rows" @change="onRowsChange" />
-        </label>
       </div>
       <p class="section-note">
-        {{ layout.mode === 'auto' ? '自动模式下按屏幕尺寸计算' : '手动指定固定行列' }}，当前为 {{ cols }} 列 × {{ rows }} 行
+        屏宽 4-8 格。窄屏时自动收缩为可放格数，放不下下一屏的空间留空，后续屏按顺序落到下方。
       </p>
     </div>
   </section>
@@ -139,6 +92,7 @@ function onRowsChange(event: Event) {
 }
 
 .tab-btn {
+  min-width: 44px;
   padding: 5px 14px;
   border-radius: 999px;
   border: 1px solid transparent;
@@ -154,34 +108,10 @@ function onRowsChange(event: Event) {
   color: var(--text);
 }
 
-.manual-row {
-  display: flex;
-  gap: 12px;
-}
-
-.number-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.number-field input {
-  width: 64px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--glass-border);
-  background: rgb(255 255 255 / 0.08);
-  color: var(--text);
-  font-size: 13px;
-  font-family: inherit;
-  outline: none;
-}
-
 .section-note {
   margin: 0;
   color: var(--text-secondary);
   font-size: 12px;
+  line-height: 1.5;
 }
 </style>

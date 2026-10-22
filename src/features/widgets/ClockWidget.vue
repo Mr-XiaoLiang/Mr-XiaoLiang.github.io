@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import type { WidgetSize } from '../../core/types';
-
-const props = withDefaults(defineProps<{ size?: WidgetSize }>(), { size: 's' });
 
 const now = ref(new Date());
 let timer = 0;
@@ -22,18 +19,15 @@ const dateLine = computed(() => {
   return `${now.value.getMonth() + 1}月${now.value.getDate()}日 星期${weekdays[now.value.getDay()]}`;
 });
 
-const timeSize = computed(() => (props.size === 'l' ? 46 : props.size === 'm' ? 32 : 22));
-const dateSize = computed(() => (props.size === 'l' ? 15 : props.size === 'm' ? 13 : 11));
-
 function pad(value: number): string {
   return value.toString().padStart(2, '0');
 }
 </script>
 
 <template>
-  <div class="clock-widget" :class="`size-${size}`">
-    <span class="clock-time" :style="{ fontSize: `${timeSize}px` }">{{ time }}</span>
-    <span class="clock-date" :style="{ fontSize: `${dateSize}px` }">{{ dateLine }}</span>
+  <div class="clock-widget">
+    <span class="clock-time">{{ time }}</span>
+    <span class="clock-date">{{ dateLine }}</span>
   </div>
 </template>
 
@@ -42,20 +36,28 @@ function pad(value: number): string {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px;
+  justify-content: space-evenly;
+  gap: 4%;
+  width: 100%;
+  height: 100%;
+  padding: 8%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
+/* 字号同时受高度与宽度约束，窄高磁贴（如 2x3）不溢出 */
 .clock-time {
   font-weight: 700;
+  font-size: clamp(18px, min(26cqh, 30cqw), 64px);
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: 1.05;
   letter-spacing: 0.02em;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
 }
 
 .clock-date {
-  color: var(--text-secondary);
+  color: rgb(255 255 255 / 0.85);
+  font-size: clamp(10px, min(8cqh, 9cqw), 18px);
   white-space: nowrap;
 }
 </style>

@@ -10,17 +10,15 @@ export interface WidgetDefinition {
   name: string;
   description: string;
   component: Component;
-  /** 各尺寸占用的网格格数 */
-  spans: Record<WidgetSize, { cols: number; rows: number }>;
-  supportedSizes: WidgetSize[];
+  /** 最小支持尺寸（格） */
+  minSize: WidgetSize;
+  /** 默认尺寸（格） */
   defaultSize: WidgetSize;
+  /** 应用库中提供的快捷尺寸 */
+  quickSizes: WidgetSize[];
+  /** 是否不在磁块上叠加名称（iframe 自带标题栏） */
+  hideTileName?: boolean;
 }
-
-const SPANS: Record<WidgetSize, { cols: number; rows: number }> = {
-  s: { cols: 2, rows: 2 },
-  m: { cols: 4, rows: 2 },
-  l: { cols: 4, rows: 4 },
-};
 
 export const WIDGET_REGISTRY: WidgetDefinition[] = [
   {
@@ -28,36 +26,57 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     name: '时钟',
     description: '显示当前时间与日期',
     component: ClockWidget,
-    spans: SPANS,
-    supportedSizes: ['s', 'm'],
-    defaultSize: 's',
+    minSize: { cols: 2, rows: 2 },
+    defaultSize: { cols: 2, rows: 2 },
+    quickSizes: [
+      { cols: 2, rows: 2 },
+      { cols: 3, rows: 3 },
+      { cols: 4, rows: 2 },
+      { cols: 4, rows: 4 },
+    ],
   },
   {
     type: 'search',
     name: '搜索',
     description: '多引擎搜索框，可选默认引擎',
     component: SearchWidget,
-    spans: SPANS,
-    supportedSizes: ['m', 'l'],
-    defaultSize: 'm',
+    minSize: { cols: 2, rows: 2 },
+    defaultSize: { cols: 4, rows: 2 },
+    quickSizes: [
+      { cols: 2, rows: 2 },
+      { cols: 3, rows: 3 },
+      { cols: 4, rows: 2 },
+      { cols: 4, rows: 4 },
+    ],
   },
   {
     type: 'calendar',
     name: '日历',
     description: '当月月历，高亮今日',
     component: CalendarWidget,
-    spans: SPANS,
-    supportedSizes: ['m', 'l'],
-    defaultSize: 'm',
+    minSize: { cols: 2, rows: 2 },
+    defaultSize: { cols: 3, rows: 3 },
+    quickSizes: [
+      { cols: 2, rows: 2 },
+      { cols: 3, rows: 3 },
+      { cols: 4, rows: 3 },
+      { cols: 4, rows: 4 },
+    ],
   },
   {
     type: 'iframe',
     name: '网页',
     description: '以 iframe 加载的网页小组件',
     component: IframeWidget,
-    spans: SPANS,
-    supportedSizes: ['s', 'm', 'l'],
-    defaultSize: 'm',
+    minSize: { cols: 2, rows: 2 },
+    defaultSize: { cols: 4, rows: 4 },
+    quickSizes: [
+      { cols: 2, rows: 2 },
+      { cols: 3, rows: 3 },
+      { cols: 4, rows: 2 },
+      { cols: 4, rows: 4 },
+    ],
+    hideTileName: true,
   },
 ];
 
@@ -65,8 +84,6 @@ export function getWidgetDefinition(type: WidgetType): WidgetDefinition | undefi
   return WIDGET_REGISTRY.find((definition) => definition.type === type);
 }
 
-export const SIZE_LABELS: Record<WidgetSize, string> = {
-  s: '小',
-  m: '中',
-  l: '大',
-};
+export function sizeLabel(size: WidgetSize): string {
+  return `${size.cols}×${size.rows}`;
+}

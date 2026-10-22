@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import AppIcon from './AppIcon.vue';
-import type { AppItem } from '../../core/types';
+import { tileColorFor } from '../../core/theme';
 
 export interface AddAppPayload {
   name: string;
   url: string;
   icon: string;
-  description: string;
+  fullIcon?: string;
+  description?: string;
 }
-
-defineProps<{
-  page: number;
-}>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -22,19 +18,14 @@ const emit = defineEmits<{
 const name = ref('');
 const url = ref('');
 const icon = ref('');
+const fullIcon = ref('');
 const description = ref('');
 const nameInput = ref<HTMLInputElement | null>(null);
 
 const canSubmit = computed(() => name.value.trim().length > 0 && url.value.trim().length > 0);
 
-const preview = computed<AppItem>(() => ({
-  id: 'preview',
-  name: name.value.trim() || '新应用',
-  url: '#',
-  icon: icon.value.trim(),
-  source: 'user',
-  placement: { kind: 'library' },
-}));
+const previewInitial = computed(() => name.value.trim().charAt(0).toUpperCase() || '新');
+const previewColor = computed(() => tileColorFor(name.value.trim() || 'preview'));
 
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') emit('close');
@@ -53,6 +44,7 @@ function submit() {
     name: name.value.trim(),
     url: url.value.trim(),
     icon: icon.value.trim(),
+    fullIcon: fullIcon.value.trim() || undefined,
     description: description.value.trim(),
   });
 }
@@ -63,7 +55,10 @@ function submit() {
     <form class="panel" @submit.prevent="submit">
       <h2 class="panel-title">添加应用</h2>
       <div class="panel-preview">
-        <AppIcon :app="preview" :cell="56" />
+        <span class="preview-tile" :style="{ background: previewColor }">
+          <img v-if="icon.trim()" :src="icon.trim()" alt="" />
+          <span v-else>{{ previewInitial }}</span>
+        </span>
       </div>
       <label class="field">
         <span class="field-label">名称</span>
@@ -78,10 +73,14 @@ function submit() {
         <input v-model="icon" type="text" placeholder="https://..." />
       </label>
       <label class="field">
+        <span class="field-label">全覆盖图（选填）</span>
+        <input v-model="fullIcon" type="text" placeholder="https://...，优先于图标平铺整个磁块" />
+      </label>
+      <label class="field">
         <span class="field-label">描述（选填）</span>
         <input v-model="description" type="text" maxlength="60" placeholder="一句话说明" />
       </label>
-      <p v-if="!icon.trim()" class="field-note">未填写图标时将使用名称首字生成色块</p>
+      <p v-if="!icon.trim() && !fullIcon.trim()" class="field-note">未填写图片时将使用名称首字生成色块</p>
       <div class="panel-actions">
         <button type="button" class="btn btn-plain" @click="emit('close')">取消</button>
         <button type="submit" class="btn btn-primary" :disabled="!canSubmit">添加</button>
@@ -130,6 +129,23 @@ function submit() {
 .panel-preview {
   display: grid;
   place-items: center;
+}
+
+.preview-tile {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.preview-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .field {
@@ -190,7 +206,7 @@ function submit() {
 }
 
 .btn-primary {
-  background: #3b6ef5;
+  background: #1ba1e2;
   color: #fff;
 }
 

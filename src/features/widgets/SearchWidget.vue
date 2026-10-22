@@ -2,9 +2,6 @@
 import { computed, ref } from 'vue';
 import { useConfigStore } from '../../stores/config';
 import { SEARCH_ENGINES, buildSearchUrl } from '../../core/search';
-import type { WidgetSize } from '../../core/types';
-
-withDefaults(defineProps<{ size?: WidgetSize }>(), { size: 'm' });
 
 const store = useConfigStore();
 const query = ref('');
@@ -25,22 +22,25 @@ function selectEngine(id: string) {
 </script>
 
 <template>
-  <form class="search-widget" :class="`size-${size}`" @submit.prevent="submit">
+  <form class="search-widget" @submit.prevent="submit">
     <div class="search-row">
       <input v-model="query" type="search" placeholder="搜索网页" enterkeyhint="search" />
       <button type="submit" aria-label="搜索">搜索</button>
     </div>
-    <div class="engine-row">
-      <button
-        v-for="item in SEARCH_ENGINES"
-        :key="item.id"
-        type="button"
-        class="engine-chip"
-        :class="{ active: item.id === engine }"
-        @click="selectEngine(item.id)"
-      >
-        {{ item.name }}
-      </button>
+    <div class="engine-block">
+      <span class="engine-label">默认搜索引擎</span>
+      <div class="engine-row">
+        <button
+          v-for="item in SEARCH_ENGINES"
+          :key="item.id"
+          type="button"
+          class="engine-chip"
+          :class="{ active: item.id === engine }"
+          @click="selectEngine(item.id)"
+        >
+          {{ item.name }}
+        </button>
+      </div>
     </div>
   </form>
 </template>
@@ -49,71 +49,86 @@ function selectEngine(id: string) {
 .search-widget {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px;
+  justify-content: space-evenly;
+  gap: 5%;
+  width: 100%;
+  height: 100%;
+  padding: 8%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .search-row {
   display: flex;
-  gap: 8px;
+  gap: 3%;
 }
 
 .search-row input {
   flex: 1;
   min-width: 0;
-  padding: 7px 12px;
+  padding: 2.5% 5%;
+  border: none;
   border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  background: rgb(255 255 255 / 0.1);
-  color: var(--text);
-  font-size: 13px;
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+  font-size: clamp(11px, 7cqh, 16px);
   font-family: inherit;
   outline: none;
 }
 
 .search-row input::placeholder {
-  color: var(--text-secondary);
+  color: rgb(255 255 255 / 0.65);
+}
+
+.search-row input:focus {
+  background: rgb(255 255 255 / 0.26);
 }
 
 .search-row button {
   flex: 0 0 auto;
-  padding: 7px 14px;
+  padding: 2.5% 5%;
   border: none;
   border-radius: 999px;
-  background: #3b6ef5;
-  color: #fff;
-  font-size: 13px;
+  background: rgb(255 255 255 / 0.9);
+  color: #1b1e26;
+  font-size: clamp(11px, 7cqh, 16px);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
 }
 
+.engine-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3%;
+}
+
+.engine-label {
+  color: rgb(255 255 255 / 0.7);
+  font-size: clamp(9px, 5cqh, 12px);
+}
+
 .engine-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 2%;
 }
 
 .engine-chip {
-  padding: 3px 10px;
+  padding: 1.5% 3.5%;
   border-radius: 999px;
-  border: 1px solid transparent;
-  background: rgb(255 255 255 / 0.08);
-  color: var(--text-secondary);
-  font-size: 11px;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.8);
+  font-size: clamp(9px, 5.5cqh, 13px);
   font-family: inherit;
   cursor: pointer;
 }
 
 .engine-chip.active {
-  border-color: rgb(255 255 255 / 0.35);
-  color: var(--text);
-}
-
-.search-widget.size-l .search-row input,
-.search-widget.size-l .search-row button {
-  padding: 9px 14px;
-  font-size: 14px;
+  border-color: rgb(255 255 255 / 0.7);
+  background: rgb(255 255 255 / 0.28);
+  color: #fff;
+  font-weight: 600;
 }
 </style>

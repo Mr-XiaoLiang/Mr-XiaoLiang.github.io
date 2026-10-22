@@ -1,21 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { WidgetSize } from '../../core/types';
 
 const props = withDefaults(
   defineProps<{
     url?: string;
     name?: string;
-    size?: WidgetSize;
   }>(),
   {
     url: '',
     name: '网页小组件',
-    size: 'm',
   },
 );
 
-const showBar = computed(() => props.size !== 's');
+const hasUrl = computed(() => props.url.length > 0);
 
 function openExternal() {
   if (props.url) window.open(props.url, '_blank', 'noopener');
@@ -25,7 +22,7 @@ function openExternal() {
 <template>
   <div class="iframe-widget">
     <iframe
-      v-if="url"
+      v-if="hasUrl"
       class="iframe-frame"
       :src="url"
       :title="name"
@@ -34,7 +31,7 @@ function openExternal() {
       referrerpolicy="no-referrer-when-downgrade"
     />
     <div v-else class="iframe-empty">未配置网址</div>
-    <div v-if="showBar" class="iframe-bar">
+    <div class="iframe-bar">
       <span class="iframe-name">{{ name }}</span>
       <button type="button" @click="openExternal">新窗口打开</button>
     </div>
@@ -49,20 +46,21 @@ function openExternal() {
   height: 100%;
   overflow: hidden;
   border-radius: inherit;
+  background: #fff;
 }
 
 .iframe-frame {
   flex: 1;
   width: 100%;
   border: none;
-  background: #fff;
 }
 
 .iframe-empty {
   display: grid;
   flex: 1;
   place-items: center;
-  color: var(--text-secondary);
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.75);
   font-size: 12px;
 }
 
@@ -71,13 +69,13 @@ function openExternal() {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border-top: 1px solid var(--glass-border);
+  background: rgb(0 0 0 / 0.35);
 }
 
 .iframe-name {
   flex: 1;
   overflow: hidden;
-  color: var(--text-secondary);
+  color: rgb(255 255 255 / 0.85);
   font-size: 11px;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -88,8 +86,8 @@ function openExternal() {
   padding: 3px 10px;
   border: none;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.12);
-  color: var(--text);
+  background: rgb(255 255 255 / 0.85);
+  color: #1b1e26;
   font-size: 11px;
   font-family: inherit;
   cursor: pointer;
