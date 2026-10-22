@@ -10,6 +10,7 @@ import EditToolbar from './EditToolbar.vue';
 import AddAppPanel, { type AddAppPayload } from './AddAppPanel.vue';
 import AppLibrary from '../library/AppLibrary.vue';
 import WidgetGallery from '../widgets/WidgetGallery.vue';
+import SettingsPanel from '../settings/SettingsPanel.vue';
 import type { LayoutSetting } from '../../core/types';
 
 const store = useConfigStore();
@@ -26,6 +27,7 @@ const pagesWithItems = computed(() => pages.value.map((page) => ({ page, items: 
 const addingPage = ref<number | null>(null);
 const widgetGalleryPage = ref<number | null>(null);
 const libraryOpen = ref(false);
+const settingsOpen = ref(false);
 
 // 滑动翻页 + 长按进入编辑模式
 const tracking = ref(false);
@@ -135,11 +137,12 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     if (addingPage.value !== null) addingPage.value = null;
     else if (widgetGalleryPage.value !== null) widgetGalleryPage.value = null;
+    else if (settingsOpen.value) settingsOpen.value = false;
     else if (libraryOpen.value) libraryOpen.value = false;
     else if (editing.value) exit();
     return;
   }
-  if (libraryOpen.value || widgetGalleryPage.value !== null || editing.value) return;
+  if (libraryOpen.value || widgetGalleryPage.value !== null || settingsOpen.value || editing.value) return;
   if (event.key === 'ArrowRight') go(current.value + 1);
   else if (event.key === 'ArrowLeft') go(current.value - 1);
 }
@@ -209,6 +212,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
   <transition name="library">
     <AppLibrary v-if="libraryOpen" :current-page="current" @close="libraryOpen = false" />
   </transition>
+  <SettingsPanel v-if="settingsOpen" @close="settingsOpen = false" />
+  <button
+    type="button"
+    class="settings-gear"
+    aria-label="打开设置"
+    title="设置"
+    @click.stop="settingsOpen = true"
+  >
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
+      <path
+        d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.2 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+      />
+    </svg>
+  </button>
 </template>
 
 <style scoped>
@@ -309,5 +326,28 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
+}
+
+.settings-gear {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: color 0.2s ease;
+}
+
+.settings-gear:hover {
+  color: var(--text);
 }
 </style>

@@ -34,7 +34,7 @@ const GRID_GAP: Record<Density, number> = {
   compact: 10,
 };
 
-const LIMITS = {
+export const GRID_LIMITS = {
   minCols: 3,
   maxCols: 12,
   minRows: 2,
@@ -54,12 +54,12 @@ export function computeGrid(input: GridInput): GridMetrics {
   let cols = Math.floor((Math.max(0, width - paddingX * 2) + gap) / (cell + gap));
   let rows = Math.floor((Math.max(0, height) + gap) / (cell + gap));
 
-  cols = clamp(cols, LIMITS.minCols, LIMITS.maxCols);
-  rows = clamp(rows, LIMITS.minRows, LIMITS.maxRows);
+  cols = clamp(cols, GRID_LIMITS.minCols, GRID_LIMITS.maxCols);
+  rows = clamp(rows, GRID_LIMITS.minRows, GRID_LIMITS.maxRows);
 
   if (layout.mode === 'manual') {
-    if (layout.cols && layout.cols > 0) cols = clamp(Math.round(layout.cols), LIMITS.minCols, LIMITS.maxCols);
-    if (layout.rows && layout.rows > 0) rows = clamp(Math.round(layout.rows), LIMITS.minRows, LIMITS.maxRows);
+    if (layout.cols && layout.cols > 0) cols = clamp(Math.round(layout.cols), GRID_LIMITS.minCols, GRID_LIMITS.maxCols);
+    if (layout.rows && layout.rows > 0) rows = clamp(Math.round(layout.rows), GRID_LIMITS.minRows, GRID_LIMITS.maxRows);
   }
 
   return { cols, rows, cell, gap };

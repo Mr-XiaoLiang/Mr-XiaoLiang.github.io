@@ -2,9 +2,22 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { mergePresets, normalize, sortByPlacement } from '../core/model';
 import { fetchPresetApps, presetToApp } from '../core/presets';
-import { loadConfig, saveConfig } from '../core/storage';
+import { loadConfig, saveConfig, clearConfig } from '../core/storage';
 import { newId, normalizeUrl } from '../core/utils';
-import type { AppConfig, AppItem, DesktopItem, DomEntry, Placement, WidgetItem, WidgetSize, WidgetType } from '../core/types';
+import { CONFIG_VERSION } from '../core/types';
+import type {
+  AppConfig,
+  AppItem,
+  DesktopItem,
+  DomEntry,
+  LayoutSetting,
+  Placement,
+  ThemeMode,
+  WallpaperSetting,
+  WidgetItem,
+  WidgetSize,
+  WidgetType,
+} from '../core/types';
 
 export const useConfigStore = defineStore('config', () => {
   const config = ref<AppConfig | null>(null);
@@ -239,6 +252,51 @@ export const useConfigStore = defineStore('config', () => {
     persist();
   }
 
+  /** 更新壁纸设置 */
+  function setWallpaper(setting: WallpaperSetting): void {
+    const current = config.value;
+    if (!current) return;
+    config.value = normalize({ ...current, wallpaper: setting });
+    persist();
+  }
+
+  /** 更新布局设置（密度、模式、手动行列） */
+  function updateLayout(patch: Partial<LayoutSetting>): void {
+    const current = config.value;
+    if (!current) return;
+    config.value = normalize({ ...current, layout: { ...current.layout, ...patch } });
+    persist();
+  }
+
+  function setTheme(mode: ThemeMode): void {
+    const current = config.value;
+    if (!current) return;
+    config.value = normalize({ ...current, theme: mode });
+    persist();
+  }
+
+  /** 导入配置文件：校验版本与必要字段后替换整体配置 */
+  function importConfig(raw: unknown): void {
+    if (!raw || typeof raw !== 'object') throw new Error('配置文件格式不正确');
+    const data = raw as AppConfig;
+    if (data.version !== CONFIG_VERSION) {
+      throw new Error(`配置版本不兼容，需要 v${CONFIG_VERSION}`);
+    }
+    if (!Array.isArray(data.apps) || !Array.isArray(data.widgets)) {
+      throw new Error('配置文件缺少必要字段');
+    }
+    config.value = normalize({ ...data, version: CONFIG_VERSION });
+    persist();
+  }
+
+  /** 恢复默认：清空本地配置并按预设重建 */
+  async function resetToDefault(): Promise<void> {
+    clearConfig();
+    const presets = (await fetchPresetApps()).map(presetToApp);
+    config.value = mergePresets(null, presets);
+    persist();
+  }
+
   return {
     config,
     ready,
@@ -261,6 +319,11 @@ export const useConfigStore = defineStore('config', () => {
     deleteApp,
     addWidget,
     removeWidget,
+    setWallpaper,
+    updateLayout,
+    setTheme,
+    importConfig,
+    resetToDefault,
   };
 });
 
