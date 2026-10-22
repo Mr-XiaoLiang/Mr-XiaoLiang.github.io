@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { getWidgetDefinition } from '../widgets/registry';
+import FaviconImage from './FaviconImage.vue';
 import { useEditMode } from './editState';
 import { tileColorFor } from '../../core/theme';
-import { LIBRARY_TILE_ID, isValidTileSize, MAX_TILE_SPAN, type AppItem, type WidgetItem } from '../../core/types';
+import { LIBRARY_TILE_ID, isValidTileSize, MAX_TILE_SPAN, SETTINGS_TILE_ID, type AppItem, type WidgetItem } from '../../core/types';
 
 const props = defineProps<{
   app?: AppItem;
@@ -20,11 +21,16 @@ const emit = defineEmits<{
   (e: 'remove', id: string): void;
   (e: 'resize', id: string, cols: number, rows: number): void;
   (e: 'open-library'): void;
+  (e: 'open-settings'): void;
 }>();
 
 const { editing } = useEditMode();
 
+/** favicon 全部候选失败的磁块 id，降级为首字色块 */
+const faviconFailedId = ref('');
+
 const isLibrary = computed(() => props.app?.id === LIBRARY_TILE_ID);
+const isSettings = computed(() => props.app?.id === SETTINGS_TILE_ID);
 const tileId = computed(() => props.app?.id ?? props.widget?.id ?? '');
 const isWidget = computed(() => !!props.widget);
 
@@ -104,9 +110,14 @@ function onResizeDown(event: PointerEvent) {
 }
 
 function activate() {
-  if (editing.value) return;
+  // 编辑态下系统磁块（应用库、设置）仍可点按，应用与小组件磁块交由徽标和手柄操作
+  if (editing.value && !isLibrary.value && !isSettings.value) return;
   if (isLibrary.value) {
     emit('open-library');
+    return;
+  }
+  if (isSettings.value) {
+    emit('open-settings');
     return;
   }
   const url = props.widget ? (props.widget.props.url as string | undefined) : props.app?.url;
@@ -139,7 +150,23 @@ function activate() {
           <rect x="3" y="13" width="8" height="8" opacity="0.55" />
           <rect x="13" y="13" width="8" height="8" />
         </svg>
+        <svg
+          v-else-if="isSettings"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.2 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+          />
+        </svg>
         <img v-else-if="app?.icon" :src="app.icon" :alt="app?.name ?? ''" draggable="false" />
+        <FaviconImage
+          v-else-if="app?.url && faviconFailedId !== tileId"
+          :url="app.url"
+          :alt="app?.name ?? ''"
+          @failed="faviconFailedId = tileId"
+        />
         <span v-else class="tile-initial">{{ (app?.name ?? '?').trim().charAt(0).toUpperCase() }}</span>
       </div>
     </template>

@@ -46,11 +46,11 @@ async function reset() {
 </script>
 
 <template>
-  <section class="settings-section">
-    <h3 class="section-title">数据</h3>
+  <section class="flat-section">
+    <h3 class="flat-section-title">数据</h3>
     <div class="action-row">
-      <button type="button" class="action-btn" @click="exportConfig">导出配置</button>
-      <label class="action-btn">
+      <button type="button" class="flat-btn" @click="exportConfig">导出配置</button>
+      <label class="flat-btn">
         导入配置
         <input type="file" accept="application/json,.json" @change="onImport" />
       </label>
@@ -58,74 +58,38 @@ async function reset() {
     <div class="action-row">
       <template v-if="confirmingReset">
         <span class="reset-warning">将清空全部个性化数据，此操作不可撤销</span>
-        <button type="button" class="action-btn danger" @click="reset">确认恢复</button>
-        <button type="button" class="action-btn" @click="confirmingReset = false">取消</button>
+        <button type="button" class="flat-btn flat-btn-danger" @click="reset">确认恢复</button>
+        <button type="button" class="flat-btn" @click="confirmingReset = false">取消</button>
       </template>
-      <button v-else type="button" class="action-btn" @click="confirmingReset = true">恢复默认</button>
+      <button v-else type="button" class="flat-btn" @click="confirmingReset = true">恢复默认</button>
     </div>
-    <p v-if="message" class="section-note">{{ message }}</p>
-    <p v-if="error" class="section-error">{{ error }}</p>
+    <p v-if="message" class="flat-note">{{ message }}</p>
+    <p v-if="error" class="wp-error">{{ error }}</p>
   </section>
 </template>
 
 <style scoped>
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.section-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .action-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.action-btn {
-  padding: 7px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--glass-border);
-  background: rgb(255 255 255 / 0.08);
-  color: var(--text);
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.action-btn input {
+.action-row label input {
   display: none;
-}
-
-.action-btn.danger {
-  border-color: transparent;
-  background: #d5484d;
-  color: #fff;
-  font-weight: 600;
 }
 
 .reset-warning {
   flex: 1;
   min-width: 180px;
-  color: #ff9b9e;
+  color: var(--danger);
   font-size: 12px;
 }
 
-.section-note {
+.wp-error {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.section-error {
-  margin: 0;
-  color: #ff7b7f;
+  color: var(--danger);
   font-size: 12px;
 }
 </style>

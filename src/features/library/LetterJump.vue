@@ -13,14 +13,14 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="jump-mask" @click.self="emit('close')">
+  <div class="jump-layer" @click.self="emit('close')">
     <div class="jump-grid" role="dialog" aria-label="字母索引">
       <button
         v-for="letter in [...LETTERS, '#']"
         :key="letter"
         type="button"
         class="jump-cell"
-        :class="{ disabled: !available.includes(letter) }"
+        :class="{ available: available.includes(letter) }"
         :aria-label="`跳转到 ${letter}`"
         @click="available.includes(letter) && emit('jump', letter)"
       >
@@ -31,16 +31,14 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.jump-mask {
+.jump-layer {
   position: absolute;
   inset: 0;
   z-index: 5;
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgb(0 0 0 / 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--flat-bg);
 }
 
 .jump-grid {
@@ -54,21 +52,23 @@ const emit = defineEmits<{
   display: grid;
   place-items: center;
   aspect-ratio: 1;
-  border: none;
-  background: rgb(255 255 255 / 0.12);
-  color: var(--text);
-  font-size: 14px;
+  border: 2px solid var(--flat-border);
+  background: none;
+  color: var(--flat-tertiary);
+  font-size: 15px;
   font-weight: 600;
   font-family: inherit;
+  cursor: default;
+}
+
+.jump-cell.available {
+  border-color: var(--accent);
+  color: var(--accent);
   cursor: pointer;
 }
 
-.jump-cell:active {
-  background: rgb(255 255 255 / 0.25);
-}
-
-.jump-cell.disabled {
-  opacity: 0.25;
-  cursor: default;
+.jump-cell.available:active {
+  background: var(--accent);
+  color: #fff;
 }
 </style>

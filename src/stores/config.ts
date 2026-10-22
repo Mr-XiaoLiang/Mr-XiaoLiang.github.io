@@ -4,7 +4,7 @@ import { mergePresets, normalize } from '../core/model';
 import { fetchPresetApps, presetToApp } from '../core/presets';
 import { loadConfig, saveConfig, clearConfig } from '../core/storage';
 import { newId, normalizeUrl } from '../core/utils';
-import { CONFIG_VERSION, LIBRARY_TILE_ID, isValidTileSize, type AppConfig, type AppItem, type DesktopTile, type DomEntry, type LayoutSetting, type ThemeMode, type WallpaperSetting, type WidgetItem, type WidgetSize, type WidgetType } from '../core/types';
+import { CONFIG_VERSION, LIBRARY_TILE_ID, SETTINGS_TILE_ID, isValidTileSize, type AppConfig, type AppItem, type DesktopTile, type DomEntry, type LayoutSetting, type ThemeMode, type WallpaperSetting, type WidgetItem, type WidgetSize, type WidgetType } from '../core/types';
 
 export const useConfigStore = defineStore('config', () => {
   const config = ref<AppConfig | null>(null);
@@ -104,10 +104,10 @@ export const useConfigStore = defineStore('config', () => {
     persist();
   }
 
-  /** 彻底删除应用：预设应用记入隐藏名单，预设更新后不再复活 */
+  /** 彻底删除应用：预设应用记入隐藏名单，预设更新后不再复活；系统磁块不可删除 */
   function deleteApp(appId: string): void {
     const current = config.value;
-    if (!current || appId === LIBRARY_TILE_ID) return;
+    if (!current || appId === LIBRARY_TILE_ID || appId === SETTINGS_TILE_ID) return;
     const target = current.apps.find((app) => app.id === appId);
     if (!target) return;
     const hiddenPresetIds =

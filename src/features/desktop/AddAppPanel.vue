@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { tileColorFor } from '../../core/theme';
+import FaviconImage from './FaviconImage.vue';
 
 export interface AddAppPayload {
   name: string;
@@ -27,6 +28,13 @@ const canSubmit = computed(() => name.value.trim().length > 0 && url.value.trim(
 const previewInitial = computed(() => name.value.trim().charAt(0).toUpperCase() || '新');
 const previewColor = computed(() => tileColorFor(name.value.trim() || 'preview'));
 
+/** 预览中 favicon 是否已尝试失败，失败则显示首字 */
+const faviconFailed = ref(false);
+
+watch(url, () => {
+  faviconFailed.value = false;
+});
+
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') emit('close');
 }
@@ -51,81 +59,51 @@ function submit() {
 </script>
 
 <template>
-  <div class="panel-mask" @click.self="emit('close')">
-    <form class="panel" @submit.prevent="submit">
-      <h2 class="panel-title">添加应用</h2>
+  <div class="flat-page" role="dialog" aria-label="添加应用">
+    <header class="flat-page-header">
+      <h2 class="flat-page-title">添加应用</h2>
+      <button type="button" class="flat-page-close" @click="emit('close')">关闭</button>
+    </header>
+    <form class="flat-page-body" @submit.prevent="submit">
       <div class="panel-preview">
         <span class="preview-tile" :style="{ background: previewColor }">
           <img v-if="icon.trim()" :src="icon.trim()" alt="" />
+          <FaviconImage v-else-if="url.trim() && !faviconFailed" :url="url" alt="" @failed="faviconFailed = true" />
           <span v-else>{{ previewInitial }}</span>
         </span>
       </div>
       <label class="field">
-        <span class="field-label">名称</span>
-        <input ref="nameInput" v-model="name" type="text" maxlength="30" placeholder="网站名称" required />
+        <span class="flat-label">名称</span>
+        <input ref="nameInput" v-model="name" class="flat-input" type="text" maxlength="30" placeholder="网站名称" required />
       </label>
       <label class="field">
-        <span class="field-label">网址</span>
-        <input v-model="url" type="text" placeholder="example.com" required />
+        <span class="flat-label">网址</span>
+        <input v-model="url" class="flat-input" type="text" placeholder="example.com" required />
       </label>
       <label class="field">
-        <span class="field-label">图标地址（选填）</span>
-        <input v-model="icon" type="text" placeholder="https://..." />
+        <span class="flat-label">图标地址（选填）</span>
+        <input v-model="icon" class="flat-input" type="text" placeholder="https://..." />
       </label>
       <label class="field">
-        <span class="field-label">全覆盖图（选填）</span>
-        <input v-model="fullIcon" type="text" placeholder="https://...，优先于图标平铺整个磁块" />
+        <span class="flat-label">全覆盖图（选填）</span>
+        <input v-model="fullIcon" class="flat-input" type="text" placeholder="https://...，优先于图标平铺整个磁块" />
       </label>
       <label class="field">
-        <span class="field-label">描述（选填）</span>
-        <input v-model="description" type="text" maxlength="60" placeholder="一句话说明" />
+        <span class="flat-label">描述（选填）</span>
+        <input v-model="description" class="flat-input" type="text" maxlength="60" placeholder="一句话说明" />
       </label>
-      <p v-if="!icon.trim() && !fullIcon.trim()" class="field-note">未填写图片时将使用名称首字生成色块</p>
+      <p v-if="!icon.trim() && !fullIcon.trim()" class="flat-note">
+        未填写图片时将尝试抓取网站图标，抓取不到则使用名称首字生成色块
+      </p>
       <div class="panel-actions">
-        <button type="button" class="btn btn-plain" @click="emit('close')">取消</button>
-        <button type="submit" class="btn btn-primary" :disabled="!canSubmit">添加</button>
+        <button type="button" class="flat-btn" @click="emit('close')">取消</button>
+        <button type="submit" class="flat-btn flat-btn-primary" :disabled="!canSubmit">添加</button>
       </div>
     </form>
   </div>
 </template>
 
 <style scoped>
-.panel-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgb(0 0 0 / 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: min(360px, 100%);
-  max-height: calc(100dvh - 48px);
-  overflow-y: auto;
-  padding: 22px;
-  border-radius: 22px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 24px 64px rgb(0 0 0 / 0.4);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  color: var(--text);
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-  text-align: center;
-}
-
 .panel-preview {
   display: grid;
   place-items: center;
@@ -134,11 +112,11 @@ function submit() {
 .preview-tile {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   overflow: hidden;
   color: #fff;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
 }
 
@@ -154,64 +132,16 @@ function submit() {
   gap: 6px;
 }
 
-.field-label {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.field input {
-  padding: 9px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border);
-  background: rgb(255 255 255 / 0.08);
-  color: var(--text);
-  font-size: 14px;
-  font-family: inherit;
-  outline: none;
-}
-
-.field input:focus {
-  border-color: rgb(255 255 255 / 0.4);
-}
-
-.field-note {
-  margin: -6px 0 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
 .panel-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
-.btn {
-  padding: 8px 18px;
-  border: none;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.btn:active {
-  transform: scale(0.96);
-}
-
-.btn-plain {
-  background: rgb(255 255 255 / 0.1);
-  color: var(--text);
-}
-
-.btn-primary {
-  background: #1ba1e2;
-  color: #fff;
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
+.flat-btn-primary:disabled {
+  border-color: var(--flat-border);
+  background: var(--flat-hover);
+  color: var(--flat-tertiary);
   cursor: not-allowed;
 }
 </style>

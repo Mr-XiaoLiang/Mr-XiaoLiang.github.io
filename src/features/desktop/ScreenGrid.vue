@@ -23,9 +23,9 @@ const emit = defineEmits<{
   (e: 'remove', id: string): void;
   (e: 'remove-widget', id: string): void;
   (e: 'resize', id: string, cols: number, rows: number): void;
-  (e: 'add-app'): void;
   (e: 'add-screen'): void;
   (e: 'open-library'): void;
+  (e: 'open-settings'): void;
   (e: 'remove-screen'): void;
 }>();
 
@@ -107,11 +107,8 @@ function onTileResize(id: string, cols: number, rows: number) {
         @remove="tile.kind === 'widget' ? emit('remove-widget', $event) : emit('remove', $event)"
         @resize="onTileResize"
         @open-library="emit('open-library')"
+        @open-settings="emit('open-settings')"
       />
-      <button v-if="editing" type="button" class="tile-add no-drag" @click.stop="emit('add-app')">
-        <span class="tile-add-sign">+</span>
-        <span class="tile-add-label">添加</span>
-      </button>
       <button
         v-if="editing && isLast"
         type="button"
@@ -122,7 +119,7 @@ function onTileResize(id: string, cols: number, rows: number) {
         <span class="tile-add-label">新屏</span>
       </button>
       <div v-if="tiles.length === 0" class="screen-placeholder">
-        <span class="screen-placeholder-text">空屏，拖动磁块到此处</span>
+        <span class="screen-placeholder-text">空屏，打开应用库固定磁块</span>
       </div>
     </div>
   </section>
@@ -173,6 +170,10 @@ function onTileResize(id: string, cols: number, rows: number) {
   color: rgb(255 255 255 / 0.75);
   font-family: inherit;
   cursor: pointer;
+}
+
+.tile-add-screen {
+  align-self: start;
 }
 
 .tile-add-sign {

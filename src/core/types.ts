@@ -4,6 +4,9 @@ export const CONFIG_VERSION = 2;
 /** 应用库磁块的固定 id，唯一不允许删除的磁块 */
 export const LIBRARY_TILE_ID = 'system:library';
 
+/** 设置磁块的固定 id，可取消固定但不可删除（始终在应用库中） */
+export const SETTINGS_TILE_ID = 'system:settings';
+
 /** 磁块合法尺寸：任一边为 1 时另一边不超过 2，其余组合 2-4 */
 export const MAX_TILE_SPAN = 4;
 

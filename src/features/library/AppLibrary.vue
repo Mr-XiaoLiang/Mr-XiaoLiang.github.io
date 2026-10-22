@@ -4,8 +4,9 @@ import { useConfigStore } from '../../stores/config';
 import { fetchPresetWidgets, type PresetWidget } from '../../core/presets';
 import { WIDGET_REGISTRY, sizeLabel } from '../widgets/registry';
 import { tileColorFor } from '../../core/theme';
+import FaviconImage from '../desktop/FaviconImage.vue';
 import LetterJump from './LetterJump.vue';
-import { LIBRARY_TILE_ID, type AppItem, type WidgetSize } from '../../core/types';
+import { LIBRARY_TILE_ID, SETTINGS_TILE_ID, type AppItem, type WidgetSize } from '../../core/types';
 
 const props = defineProps<{
   /** 添加磁块时的目标屏 */
@@ -14,6 +15,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void;
+  (e: 'open-settings'): void;
+  (e: 'add-custom-app'): void;
 }>();
 
 const store = useConfigStore();
@@ -24,6 +27,37 @@ const jumpOpen = ref(false);
 const groupRefs = ref<Record<string, HTMLElement | null>>({});
 const iframePresets = ref<PresetWidget[]>([]);
 const chosenSizes = ref<Record<string, WidgetSize>>({});
+const searchInput = ref<HTMLInputElement | null>(null);
+
+// 长按上下文菜单（Win8 风格）：按住应用行 500ms 弹出
+const menuApp = ref<AppItem | null>(null);
+let pressTimer = 0;
+
+/** favicon 全部候选失败的应用 id，降级为首字色块 */
+const faviconFailedId = ref('');
+
+function onFaviconFailed(appId: string) {
+  faviconFailedId.value = appId;
+}
+
+function cancelMenuPress() {
+  if (pressTimer) {
+    window.clearTimeout(pressTimer);
+    pressTimer = 0;
+  }
+}
+
+function onRowPressDown(app: AppItem) {
+  cancelMenuPress();
+  pressTimer = window.setTimeout(() => {
+    pressTimer = 0;
+    menuApp.value = app;
+  }, 500);
+}
+
+function onRowPressEnd() {
+  cancelMenuPress();
+}
 
 onMounted(async () => {
   try {
@@ -34,8 +68,6 @@ onMounted(async () => {
   nextTick(() => searchInput.value?.focus());
 });
 
-const searchInput = ref<HTMLInputElement | null>(null);
-
 /** 应用按首字母分组：拉丁字母取大写首字母，其余归入 # */
 function initialOf(name: string): string {
   const first = name.trim().charAt(0) ?? '';
@@ -44,9 +76,10 @@ function initialOf(name: string): string {
 
 const filteredApps = computed<AppItem[]>(() => {
   const keyword = query.value.trim().toLowerCase();
-  const list = [...store.apps].sort((a, b) =>
-    a.name.localeCompare(b.name, 'zh-Hans-CN', { sensitivity: 'base' }),
-  );
+  // 设置入口固定在列表顶部，不参与字母分组
+  const list = [...store.apps]
+    .filter((app) => app.id !== SETTINGS_TILE_ID)
+    .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN', { sensitivity: 'base' }));
   if (!keyword) return list;
   return list.filter((app) =>
     [app.name, app.description ?? '', app.category ?? ''].some((field) => field.toLowerCase().includes(keyword)),
@@ -72,22 +105,37 @@ const groups = computed(() => {
 
 const availableLetters = computed(() => groups.value.map((group) => group.letter));
 
+function jumpTo(letter: string) {
+  jumpOpen.value = false;
+  groupRefs.value[letter]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function isPinned(app: AppItem): boolean {
   return app.placement.kind === 'tile';
 }
 
-function jumpTo(letter: string) {
-  jumpOpen.value = false;
-  const element = groupRefs.value[letter];
-  element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
 function openApp(app: AppItem) {
-  if (app.url) window.open(app.url, '_blank', 'noopener');
+  if (app.id === SETTINGS_TILE_ID) {
+    emit('open-settings');
+    return;
+  }
+  if (app.id === LIBRARY_TILE_ID || !app.url) return;
+  window.open(app.url, '_blank', 'noopener');
 }
 
 function pin(app: AppItem) {
   store.pinApp(app.id, props.currentScreen ?? 0);
+  menuApp.value = null;
+}
+
+function unpin(app: AppItem) {
+  store.unpinApp(app.id);
+  menuApp.value = null;
+}
+
+function menuOpen(app: AppItem) {
+  openApp(app);
+  menuApp.value = null;
 }
 
 function widgetSizeOf(key: string, fallback: WidgetSize): WidgetSize {
@@ -118,58 +166,114 @@ function setGroupRef(letter: string) {
   };
 }
 
+/** 语义缩放：Ctrl+滚轮（含触控板捏合）在列表视图与字母分组视图间切换 */
+function onWheel(event: WheelEvent) {
+  if (!event.ctrlKey) return;
+  event.preventDefault();
+  jumpOpen.value = event.deltaY < 0;
+}
+
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
-    if (jumpOpen.value) jumpOpen.value = false;
+    if (menuApp.value) menuApp.value = null;
+    else if (jumpOpen.value) jumpOpen.value = false;
     else emit('close');
   }
 }
 
 onMounted(() => window.addEventListener('keydown', onKeydown));
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown);
+  cancelMenuPress();
+});
 </script>
 
 <template>
-  <div class="library">
-    <header class="library-header">
-      <div class="library-title-row">
-        <h2 class="library-title">应用库</h2>
-        <span class="library-count">共 {{ store.apps.length }} 个应用</span>
-        <button type="button" class="library-close" @click="emit('close')">关闭</button>
-      </div>
-      <div class="library-tabs" role="tablist">
-        <button
-          type="button"
-          class="library-tab"
-          :class="{ active: tab === 'apps' }"
-          role="tab"
-          :aria-selected="tab === 'apps'"
-          @click="tab = 'apps'"
-        >
-          应用
-        </button>
-        <button
-          type="button"
-          class="library-tab"
-          :class="{ active: tab === 'widgets' }"
-          role="tab"
-          :aria-selected="tab === 'widgets'"
-          @click="tab = 'widgets'"
-        >
-          小组件
-        </button>
-      </div>
-      <div v-if="tab === 'apps'" class="library-search">
-        <input ref="searchInput" v-model="query" type="search" placeholder="搜索应用名称或描述" />
-      </div>
+  <div class="flat-page library" @wheel="onWheel">
+    <header class="flat-page-header">
+      <h2 class="flat-page-title">应用库</h2>
+      <span class="flat-label">共 {{ store.apps.length }} 个应用</span>
+      <button type="button" class="flat-page-close" @click="emit('close')">关闭</button>
     </header>
 
+    <div class="library-tabs">
+      <button
+        type="button"
+        class="library-tab"
+        :class="{ active: tab === 'apps' }"
+        @click="tab = 'apps'"
+      >
+        应用
+      </button>
+      <button
+        type="button"
+        class="library-tab"
+        :class="{ active: tab === 'widgets' }"
+        @click="tab = 'widgets'"
+      >
+        小组件
+      </button>
+    </div>
+
+    <div v-if="tab === 'apps'" class="library-search">
+      <input ref="searchInput" v-model="query" class="flat-input" type="search" placeholder="搜索应用名称或描述" />
+      <button
+        type="button"
+        class="zoom-btn"
+        aria-label="按字母跳转"
+        title="按字母跳转（Ctrl + 滚轮）"
+        @click="jumpOpen = true"
+      >
+        A#
+      </button>
+    </div>
+
+    <p v-if="tab === 'apps'" class="lib-hint">点按打开应用；长按或点按右侧按钮，将应用固定到屏幕</p>
+
     <div v-if="tab === 'apps'" class="library-body">
+      <div class="app-row system-row" @click="emit('open-settings')">
+        <span class="row-icon" style="background: #1ba1e2">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.2 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+            />
+          </svg>
+        </span>
+        <span class="row-name">设置</span>
+        <span class="row-flag">壁纸、布局、主题与数据</span>
+      </div>
+
+      <div class="app-row system-row" @click="emit('add-custom-app')">
+        <span class="row-icon row-icon-outline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </span>
+        <span class="row-name">自定义应用</span>
+        <span class="row-flag">填写网址，新建一个磁块</span>
+      </div>
+
       <section v-for="group in groups" :key="group.letter" :ref="setGroupRef(group.letter)" class="lib-group">
         <h3 class="lib-group-title" @click="jumpOpen = true">{{ group.letter }}</h3>
-        <div v-for="app in group.apps" :key="app.id" class="app-row" @click="openApp(app)">
+        <div
+          v-for="app in group.apps"
+          :key="app.id"
+          class="app-row"
+          @click="openApp(app)"
+          @pointerdown="onRowPressDown(app)"
+          @pointerup="onRowPressEnd"
+          @pointercancel="onRowPressEnd"
+          @pointerleave="onRowPressEnd"
+        >
           <span class="row-icon" :style="{ background: app.color || tileColorFor(app.id) }">
             <img v-if="app.icon" :src="app.icon" alt="" draggable="false" />
+            <FaviconImage
+              v-else-if="app.url && faviconFailedId !== app.id"
+              :url="app.url"
+              alt=""
+              @failed="onFaviconFailed(app.id)"
+            />
             <span v-else>{{ app.name.trim().charAt(0).toUpperCase() }}</span>
           </span>
           <span class="row-name">{{ app.name }}</span>
@@ -235,112 +339,85 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
         <p v-else class="lib-empty">未配置网页小组件，可在 Widgets.json 中添加</p>
       </section>
     </div>
+
+    <!-- 长按上下文菜单（Win8 底部菜单栏） -->
+    <div v-if="menuApp" class="menu-mask" @click.self="menuApp = null">
+      <div class="menu-sheet" role="menu">
+        <p class="menu-title">{{ menuApp.name }}</p>
+        <button v-if="!isPinned(menuApp)" type="button" class="menu-item menu-primary" @click="pin(menuApp)">
+          固定到屏幕
+        </button>
+        <button v-else type="button" class="menu-item" @click="unpin(menuApp)">从屏幕取消固定</button>
+        <button v-if="menuApp.url" type="button" class="menu-item" @click="menuOpen(menuApp)">打开</button>
+        <button type="button" class="menu-item" @click="menuApp = null">取消</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.library {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  background: rgb(5 6 15 / 0.88);
-  backdrop-filter: blur(28px) saturate(1.3);
-  -webkit-backdrop-filter: blur(28px) saturate(1.3);
-  color: var(--text);
-}
-
-.library-enter-active,
-.library-leave-active {
-  transition:
-    opacity 0.24s ease,
-    transform 0.24s ease;
-}
-
-.library-enter-from,
-.library-leave-to {
-  opacity: 0;
-  transform: translateY(14px);
-}
-
-.library-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: max(18px, env(safe-area-inset-top)) 20px 12px;
-}
-
-.library-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.library-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.library-count {
-  flex: 1;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.library-close {
-  padding: 6px 16px;
-  border: none;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.16);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-}
-
 .library-tabs {
   display: flex;
+  flex: 0 0 auto;
   gap: 4px;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.08);
-  width: fit-content;
+  padding: 0 20px;
 }
 
 .library-tab {
-  padding: 6px 22px;
+  min-height: 38px;
+  padding: 8px 18px;
   border: none;
-  border-radius: 999px;
+  border-bottom: 3px solid transparent;
   background: none;
-  color: var(--text-secondary);
-  font-size: 13px;
+  color: var(--flat-secondary);
+  font-size: 15px;
   font-family: inherit;
   cursor: pointer;
 }
 
 .library-tab.active {
-  background: rgb(255 255 255 / 0.18);
-  color: var(--text);
+  border-bottom-color: var(--accent);
+  color: var(--flat-text);
   font-weight: 600;
 }
 
-.library-search input {
-  width: 100%;
-  padding: 9px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  background: rgb(255 255 255 / 0.08);
-  color: var(--text);
-  font-size: 14px;
-  font-family: inherit;
-  outline: none;
+.library-search {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 14px 20px 6px;
 }
 
-.library-search input::placeholder {
-  color: var(--text-secondary);
+.library-search .flat-input {
+  flex: 1;
+}
+
+.zoom-btn {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 2px solid var(--flat-border);
+  background: none;
+  color: var(--flat-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.zoom-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lib-hint {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 10px 20px 0;
+  color: var(--flat-tertiary);
+  font-size: 12px;
 }
 
 .library-body {
@@ -352,36 +429,44 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 }
 
 .lib-group {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .lib-group-title {
-  margin: 0 0 8px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+  margin: 0 0 6px;
+  padding: 2px 6px;
   width: fit-content;
+  color: var(--flat-text);
+  font-size: 24px;
+  font-weight: 300;
+  cursor: pointer;
 }
 
 .lib-group-title:hover {
-  background: rgb(255 255 255 / 0.12);
-  color: var(--text);
+  color: var(--accent);
 }
 
 .app-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 7px 8px;
-  border-radius: 10px;
+  gap: 14px;
+  min-height: 52px;
+  padding: 8px 6px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app-row:hover {
-  background: rgb(255 255 255 / 0.07);
+  background: var(--flat-hover);
+}
+
+.system-row {
+  border-bottom: 1px solid var(--flat-border);
+}
+
+.row-icon-outline {
+  border: 2px solid var(--accent);
+  color: var(--accent);
 }
 
 .row-icon {
@@ -396,6 +481,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
   font-weight: 600;
 }
 
+.row-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
 .row-icon img {
   width: 100%;
   height: 100%;
@@ -405,56 +495,106 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 .row-name {
   flex: 1;
   overflow: hidden;
-  font-size: 14px;
+  font-size: 15px;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .row-flag {
-  color: var(--text-secondary);
+  color: var(--flat-tertiary);
   font-size: 11px;
 }
 
 .row-pin {
-  padding: 4px 12px;
-  border: none;
-  border-radius: 999px;
-  background: #1ba1e2;
-  color: #fff;
-  font-size: 11px;
+  min-height: 32px;
+  padding: 5px 14px;
+  border: 2px solid var(--accent);
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
 }
 
+.row-pin:active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* 长按上下文菜单：Win8 底部菜单栏 */
+.menu-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  background: rgb(0 0 0 / 0.55);
+}
+
+.menu-sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 8px 0 max(10px, env(safe-area-inset-bottom));
+  background: var(--flat-bg);
+  border-top: 2px solid var(--flat-border);
+}
+
+.menu-title {
+  margin: 0;
+  padding: 10px 20px 12px;
+  color: var(--flat-secondary);
+  font-size: 13px;
+}
+
+.menu-item {
+  min-height: 48px;
+  padding: 0 20px;
+  border: none;
+  background: none;
+  color: var(--flat-text);
+  font-size: 15px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: var(--flat-hover);
+}
+
+.menu-primary {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .widget-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 12px;
 }
 
 .widget-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 14px;
-  border-radius: 16px;
-  border: 1px solid var(--glass-border);
-  background: rgb(255 255 255 / 0.06);
+  border: 2px solid var(--flat-border);
 }
 
 .card-name {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 
 .card-desc {
   margin: 0;
   flex: 1;
-  color: var(--text-secondary);
+  color: var(--flat-secondary);
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .size-row {
@@ -464,26 +604,25 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 }
 
 .size-chip {
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: rgb(255 255 255 / 0.08);
-  color: var(--text-secondary);
+  padding: 4px 10px;
+  border: 2px solid transparent;
+  background: none;
+  color: var(--flat-secondary);
   font-size: 11px;
   font-family: inherit;
   cursor: pointer;
 }
 
 .size-chip.active {
-  border-color: rgb(255 255 255 / 0.35);
-  color: var(--text);
+  border-color: var(--accent);
+  color: var(--flat-text);
+  font-weight: 600;
 }
 
 .card-add {
-  padding: 7px 0;
+  padding: 8px 0;
   border: none;
-  border-radius: 999px;
-  background: #1ba1e2;
+  background: var(--accent);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -492,12 +631,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 }
 
 .card-add:active {
-  transform: scale(0.97);
+  filter: brightness(1.15);
 }
 
 .lib-empty {
-  margin: 32px 0 0;
-  color: var(--text-secondary);
+  margin: 36px 0 0;
+  color: var(--flat-tertiary);
   font-size: 13px;
   text-align: center;
 }

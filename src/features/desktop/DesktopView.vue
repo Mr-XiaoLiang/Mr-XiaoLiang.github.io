@@ -66,6 +66,17 @@ function onAddApp(payload: AddAppPayload) {
   addingApp.value = false;
 }
 
+function onOpenSettings() {
+  libraryOpen.value = false;
+  settingsOpen.value = true;
+}
+
+// 自定义应用：从应用库进入，关闭库后打开表单
+function onAddCustomApp() {
+  libraryOpen.value = false;
+  addingApp.value = true;
+}
+
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     if (addingApp.value) addingApp.value = false;
@@ -111,36 +122,29 @@ onBeforeUnmount(() => {
           @remove="store.unpinApp"
           @remove-widget="store.removeWidget"
           @resize="onResize"
-          @add-app="addingApp = true"
           @add-screen="store.addScreen"
           @open-library="libraryOpen = true"
+          @open-settings="onOpenSettings"
           @remove-screen="store.removeScreen(screen)"
         />
       </div>
     </div>
   </main>
-  <transition name="panel">
+  <transition name="flat">
     <AddAppPanel v-if="addingApp" @close="addingApp = false" @submit="onAddApp" />
   </transition>
-  <transition name="library">
-    <AppLibrary v-if="libraryOpen" @close="libraryOpen = false" />
+  <transition name="flat">
+    <AppLibrary
+      v-if="libraryOpen"
+      :current-screen="0"
+      @close="libraryOpen = false"
+      @open-settings="onOpenSettings"
+      @add-custom-app="onAddCustomApp"
+    />
   </transition>
-  <transition name="panel">
+  <transition name="flat">
     <SettingsPanel v-if="settingsOpen" @close="settingsOpen = false" />
   </transition>
-  <button
-    type="button"
-    class="settings-gear"
-    aria-label="打开设置"
-    title="设置"
-    @click.stop="settingsOpen = true"
-  >
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
-      <path
-        d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.2 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-      />
-    </svg>
-  </button>
 </template>
 
 <style scoped>
@@ -165,42 +169,5 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-}
-
-.settings-gear {
-  position: fixed;
-  top: max(14px, env(safe-area-inset-top));
-  right: max(14px, env(safe-area-inset-right));
-  z-index: 10;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--glass-border);
-  border-radius: 50%;
-  background: var(--glass-bg);
-  color: var(--text-secondary);
-  cursor: pointer;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: color 0.2s ease;
-}
-
-.settings-gear:hover {
-  color: var(--text);
-}
-
-/* 浮层转场：淡入加轻微上移 */
-.panel-enter-active,
-.panel-leave-active {
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-}
-
-.panel-enter-from,
-.panel-leave-to {
-  opacity: 0;
-  transform: translateY(12px) scale(0.98);
 }
 </style>

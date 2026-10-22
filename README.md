@@ -74,7 +74,7 @@ push 到 `main` 即由 GitHub Actions 自动构建并发布到 GitHub Pages。�
 ```
 src/
 ├── core/          # 框架无关内核：类型、模型、持久化、预设、布局计算、搜索引擎、取色
-├── composables/   # useLayoutMetrics 等组合式函数
+├── composables/   # useTheme（主题初始化）、useLayoutMetrics（格尺寸测量）等组合式函数
 ├── stores/        # Pinia 配置 store（唯一数据源）
 ├── features/
 │   ├── desktop/   # DesktopView、ScreenGrid、Tile、编辑态、拖拽同步、添加面板

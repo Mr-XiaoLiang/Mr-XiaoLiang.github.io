@@ -9,6 +9,23 @@
   --dot: rgb(255 255 255 / 0.38);
   --dot-active: rgb(255 255 255 / 0.92);
   color-scheme: dark;
+
+  /* Win8 扁平化设计令牌：纯黑底、白字、强调色 */
+  --flat-bg: #000;
+  --flat-text: #fff;
+  --flat-secondary: rgb(255 255 255 / 0.62);
+  --flat-tertiary: rgb(255 255 255 / 0.36);
+  --flat-border: rgb(255 255 255 / 0.22);
+  --flat-hover: rgb(255 255 255 / 0.07);
+  --flat-active: rgb(255 255 255 / 0.14);
+  --accent: #1ba1e2;
+  --danger: #e51400;
+
+  /* Win8 字体阶梯（42/20/11/9 pt ≈ 56/27/15/12 px），应用内页标题取 20pt 细体 */
+  --flat-page-title: 27px;
+  --flat-section-title: 24px;
+  --flat-body: 15px;
+  --flat-caption: 12px;
 }
 
 /* 用户显式选择亮色，或自动模式下壁纸为亮色时，切换为亮色文字方案 */
@@ -24,6 +41,15 @@
   --dot: rgb(0 0 0 / 0.25);
   --dot-active: rgb(0 0 0 / 0.62);
   color-scheme: light;
+
+  /* 扁平化亮色方案：纯白底、黑字 */
+  --flat-bg: #fff;
+  --flat-text: #000;
+  --flat-secondary: rgb(0 0 0 / 0.62);
+  --flat-tertiary: rgb(0 0 0 / 0.36);
+  --flat-border: rgb(0 0 0 / 0.22);
+  --flat-hover: rgb(0 0 0 / 0.06);
+  --flat-active: rgb(0 0 0 / 0.12);
 }
 
 * {
@@ -67,4 +93,202 @@ body {
 /* SortableJS 拖拽占位淡化（磁块 ghost） */
 .tile-ghost {
   opacity: 0.3;
+}
+
+/* ===== Win8 扁平化通用控件 ===== */
+
+/* 整页浮层：纯黑（或纯白）底、直角、无模糊 */
+.flat-page {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--flat-bg);
+  color: var(--flat-text);
+}
+
+.flat-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: max(18px, env(safe-area-inset-top)) 20px 12px;
+}
+
+.flat-page-title {
+  margin: 0;
+  font-size: var(--flat-page-title);
+  font-weight: 300;
+  letter-spacing: 0.01em;
+}
+
+.flat-page-close {
+  flex: 0 0 auto;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.flat-page-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 20px max(32px, env(safe-area-inset-bottom));
+}
+
+.flat-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flat-section-title {
+  margin: 0;
+  color: var(--flat-secondary);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.flat-label {
+  color: var(--flat-secondary);
+  font-size: 12px;
+}
+
+.flat-note {
+  margin: 0;
+  color: var(--flat-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.flat-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.flat-tab {
+  padding: 7px 16px;
+  border: 2px solid transparent;
+  background: none;
+  color: var(--flat-secondary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.flat-tab:hover {
+  color: var(--flat-text);
+}
+
+.flat-tab.active {
+  border-color: var(--accent);
+  color: var(--flat-text);
+  font-weight: 600;
+}
+
+.flat-btn {
+  padding: 9px 20px;
+  border: 2px solid var(--accent);
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.flat-btn:hover {
+  background: var(--flat-hover);
+}
+
+.flat-btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.flat-btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.flat-btn-danger:hover {
+  background: rgb(229 20 0 / 0.12);
+}
+
+.flat-input {
+  width: 100%;
+  padding: 9px 2px;
+  border: none;
+  border-bottom: 2px solid var(--flat-border);
+  background: none;
+  color: var(--flat-text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.flat-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.flat-input::placeholder {
+  color: var(--flat-tertiary);
+}
+
+/* 扁平顶栏（编辑模式） */
+.flat-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--flat-bg);
+  color: var(--flat-text);
+}
+
+.flat-bar-hint {
+  color: var(--flat-secondary);
+  font-size: 12px;
+}
+
+.flat-bar-action {
+  flex: 0 0 auto;
+  padding: 6px 18px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* 浮层转场：Win8 动效规范——入场 250ms ease-out，退场 167ms ease-in */
+.flat-enter-active {
+  transition:
+    opacity 250ms ease-out,
+    transform 250ms ease-out;
+}
+
+.flat-leave-active {
+  transition:
+    opacity 167ms ease-in,
+    transform 167ms ease-in;
+}
+
+.flat-enter-from,
+.flat-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
 }
