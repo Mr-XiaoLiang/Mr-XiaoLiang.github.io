@@ -1,7 +1,7 @@
 import type { Density } from './types';
 
 export interface LayoutMetrics {
-  /** 单元格边长（px） */
+  /** 单元格边长（px），视口变窄时自动缩小以容纳固定的单屏格数 */
   cell: number;
   /** 磁贴间隙（px） */
   gap: number;
@@ -9,9 +9,7 @@ export interface LayoutMetrics {
   screenGap: number;
   /** 桌面左右安全边距（px），与屏间距一致 */
   paddingX: number;
-  /** 当前宽度可放格数 */
-  cellsFit: number;
-  /** 生效屏宽（格），不超过可放格数且不小于 4 */
+  /** 单屏横向格数（格），严格取配置值，不随视口宽度变化 */
   screenWidth: number;
 }
 
@@ -19,7 +17,7 @@ export interface LayoutInput {
   /** 桌面可用宽度（px） */
   width: number;
   density: Density;
-  /** 配置的屏宽（格），4-8 */
+  /** 配置的单屏横向格数，4-8 */
   screenWidth: number;
 }
 
@@ -49,6 +47,8 @@ const CELL_SIZE: Record<Density, number> = {
 const GUTTER_RATIO = 1 / 32;
 /** 屏间距比例：cell 的 1/3 */
 const SCREEN_GAP_RATIO = 1 / 3;
+/** 格边长下限（px），防止极端窄屏下为 0 或负数 */
+const MIN_CELL = 28;
 
 /** 屏宽边界：最小 4 格，最大 8 格 */
 export const SCREEN_WIDTH_LIMITS = { min: 4, max: 8 };
@@ -59,34 +59,36 @@ function clamp(value: number, min: number, max: number): number {
 
 /**
  * 布局计算：
- * 1. 按密度取格尺寸，由比例尺推导间隙 / 屏间距 / 边距
- * 2. 计算当前宽度可放格数；不足 4 时缩小格尺寸，硬凑 4 格
- * 3. 屏宽取配置值，收敛到 [4, 可放格数]
+ * - 单屏横向格数严格取配置值（4-8），不随视口变化——变窄时缩小格边长来容纳固定格数，
+ *   而不是减少格数去裁剪已排布的内容；
+ * - 真正随视口变化的是「屏」的排列：宽屏多屏并列，窄屏单屏串联换行（由外层 flex-wrap 处理）。
  */
 export function computeLayout(input: LayoutInput): LayoutMetrics {
   const { width, density } = input;
-  let cell = CELL_SIZE[density];
-  const gap = Math.round(cell * GUTTER_RATIO);
-  const screenGap = Math.round(cell * SCREEN_GAP_RATIO);
-  const paddingX = screenGap;
-
-  const usable = Math.max(0, width - paddingX * 2);
-  let cellsFit = Math.floor((usable + gap) / (cell + gap));
-
-  // 不足 4 格时缩小格尺寸，保证最小 4 格
-  if (cellsFit < 4) {
-    cell = Math.max(36, Math.floor((usable - 3 * gap) / 4));
-    cellsFit = Math.floor((usable + gap) / (cell + gap));
-    if (cellsFit < 4) cellsFit = 4;
-  }
 
   const screenWidth = clamp(
     Math.round(input.screenWidth),
     SCREEN_WIDTH_LIMITS.min,
-    Math.min(SCREEN_WIDTH_LIMITS.max, Math.max(SCREEN_WIDTH_LIMITS.min, cellsFit)),
+    SCREEN_WIDTH_LIMITS.max,
   );
 
-  return { cell, gap, screenGap, paddingX, cellsFit, screenWidth };
+  // 一屏 + 两侧边距折算成的「格边长倍数」：
+  //   screenWidth 格 → screenWidth × cell
+  //   screenWidth-1 处间隙 → (screenWidth-1) × cell × GUTTER_RATIO
+  //   两侧边距 → 2 × cell × SCREEN_GAP_RATIO
+  const spanRatio =
+    screenWidth + (screenWidth - 1) * GUTTER_RATIO + 2 * SCREEN_GAP_RATIO;
+
+  // 视口能容纳的最大格边长；不超过密度基准（宽屏放更多屏），也不低于下限
+  const baseCell = CELL_SIZE[density];
+  const maxCellByWidth = width / spanRatio;
+  const cell = Math.max(MIN_CELL, Math.min(baseCell, Math.floor(maxCellByWidth)));
+
+  const gap = Math.round(cell * GUTTER_RATIO);
+  const screenGap = Math.round(cell * SCREEN_GAP_RATIO);
+  const paddingX = screenGap;
+
+  return { cell, gap, screenGap, paddingX, screenWidth };
 }
 
 /** 屏的像素宽度 */
