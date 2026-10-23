@@ -193,11 +193,26 @@ function onTileResize(id: string, cols: number, rows: number) {
   min-height: 100%;
 }
 
-/* 编辑态：棋盘底纹，提示可自由摆放 */
+/* 编辑态：棋盘底纹，提示可自由摆放。
+   分隔线画在「间隙中心」= cell + gap/2，周期 = cell + gap，与真实 Grid 的磁贴格精确对齐；
+   否则线若画在周期起点（单元格左边缘），会被磁贴盖住、间隙里反而留空，格子整体错位。 */
 .screen-grid.board {
+  --board-line: rgb(255 255 255 / 0.08);
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.08) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      transparent calc(var(--cell) + var(--gap) * 0.5 - 0.5px),
+      var(--board-line) calc(var(--cell) + var(--gap) * 0.5 - 0.5px),
+      var(--board-line) calc(var(--cell) + var(--gap) * 0.5 + 0.5px),
+      transparent calc(var(--cell) + var(--gap) * 0.5 + 0.5px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(var(--cell) + var(--gap) * 0.5 - 0.5px),
+      var(--board-line) calc(var(--cell) + var(--gap) * 0.5 - 0.5px),
+      var(--board-line) calc(var(--cell) + var(--gap) * 0.5 + 0.5px),
+      transparent calc(var(--cell) + var(--gap) * 0.5 + 0.5px)
+    );
   background-size: calc(var(--cell) + var(--gap)) calc(var(--cell) + var(--gap));
   background-position: 0 0;
 }
