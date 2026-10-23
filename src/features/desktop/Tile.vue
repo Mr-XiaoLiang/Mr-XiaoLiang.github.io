@@ -200,7 +200,6 @@ function activate() {
 <style scoped>
 .tile {
   position: relative;
-  container-type: size;
   border-radius: 0;
   color: #fff;
   cursor: pointer;
@@ -247,6 +246,9 @@ function activate() {
 .tile-live {
   position: absolute;
   inset: 0;
+  /* 小组件容器查询基准放在这里，避免 .tile 因 container-type 建立 stacking context
+     而把手柄的 z-index 困在磁贴内部（导致悬浮手柄被相邻磁贴压住） */
+  container-type: size;
 }
 
 .tile-icon {
@@ -298,6 +300,7 @@ function activate() {
   position: absolute;
   top: -8px;
   left: -8px;
+  z-index: 2;
   display: grid;
   place-items: center;
   width: 20px;
@@ -315,6 +318,7 @@ function activate() {
   position: absolute;
   right: -9px;
   bottom: -9px;
+  z-index: 2;
   display: grid;
   place-items: center;
   width: 24px;
