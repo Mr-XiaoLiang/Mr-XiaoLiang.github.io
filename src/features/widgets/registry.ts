@@ -40,13 +40,13 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     name: '搜索',
     description: '多引擎搜索框，可选默认引擎',
     component: SearchWidget,
-    minSize: { cols: 2, rows: 2 },
-    defaultSize: { cols: 4, rows: 2 },
+    minSize: { cols: 2, rows: 1 },
+    defaultSize: { cols: 4, rows: 1 },
     quickSizes: [
-      { cols: 2, rows: 2 },
-      { cols: 3, rows: 3 },
+      { cols: 2, rows: 1 },
+      { cols: 3, rows: 1 },
+      { cols: 4, rows: 1 },
       { cols: 4, rows: 2 },
-      { cols: 4, rows: 4 },
     ],
   },
   {

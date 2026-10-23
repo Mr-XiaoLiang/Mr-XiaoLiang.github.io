@@ -2,8 +2,6 @@ import { ref } from 'vue';
 
 /** 编辑模式状态：模块级单例，桌面各处共享 */
 const editing = ref(false);
-/** 拖拽进行中标志，供边缘翻页等协作逻辑消费 */
-const dragging = ref(false);
 
 export function useEditMode() {
   function enter() {
@@ -18,5 +16,5 @@ export function useEditMode() {
     editing.value = !editing.value;
   }
 
-  return { editing, dragging, enter, exit, toggle };
+  return { editing, enter, exit, toggle };
 }

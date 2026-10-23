@@ -231,27 +231,29 @@ onBeforeUnmount(() => {
     <p v-if="tab === 'apps'" class="lib-hint">点按打开应用；长按或点按右侧按钮，将应用固定到屏幕</p>
 
     <div v-if="tab === 'apps'" class="library-body">
-      <div class="app-row system-row" @click="emit('open-settings')">
-        <span class="row-icon" style="background: #1ba1e2">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path
-              d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.2 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-            />
-          </svg>
-        </span>
-        <span class="row-name">设置</span>
-        <span class="row-flag">壁纸、布局、主题与数据</span>
-      </div>
+      <div class="lib-system">
+        <div class="app-row system-row" @click="emit('open-settings')">
+          <span class="row-icon" style="background: #1ba1e2">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.2 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+              />
+            </svg>
+          </span>
+          <span class="row-name">设置</span>
+          <span class="row-flag">壁纸、布局、主题与数据</span>
+        </div>
 
-      <div class="app-row system-row" @click="emit('add-custom-app')">
-        <span class="row-icon row-icon-outline">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </span>
-        <span class="row-name">自定义应用</span>
-        <span class="row-flag">填写网址，新建一个磁块</span>
+        <div class="app-row system-row" @click="emit('add-custom-app')">
+          <span class="row-icon row-icon-outline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </span>
+          <span class="row-name">自定义应用</span>
+          <span class="row-flag">填写网址，新建一个磁块</span>
+        </div>
       </div>
 
       <section v-for="group in groups" :key="group.letter" :ref="setGroupRef(group.letter)" class="lib-group">
@@ -450,18 +452,33 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 52px;
-  padding: 8px 6px;
+  min-height: 56px;
+  padding: 11px 8px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* 行与行之间以细分隔线区分，避免字母分组内多行贴在一起 */
+.app-row + .app-row {
+  border-top: 1px solid var(--flat-border);
 }
 
 .app-row:hover {
   background: var(--flat-hover);
 }
 
-.system-row {
+/* 顶部操作区：与下方字母分组列表明确分隔，两行之间也留出呼吸感 */
+.lib-system {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 16px;
+  margin-bottom: 20px;
   border-bottom: 1px solid var(--flat-border);
+}
+
+.system-row {
+  min-height: 60px;
 }
 
 .row-icon-outline {

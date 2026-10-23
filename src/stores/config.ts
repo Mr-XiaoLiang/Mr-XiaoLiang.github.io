@@ -4,7 +4,9 @@ import { mergePresets, normalize } from '../core/model';
 import { fetchPresetApps, presetToApp } from '../core/presets';
 import { loadConfig, saveConfig, clearConfig } from '../core/storage';
 import { newId, normalizeUrl } from '../core/utils';
-import { CONFIG_VERSION, LIBRARY_TILE_ID, SETTINGS_TILE_ID, isValidTileSize, type AppConfig, type AppItem, type DesktopTile, type DomEntry, type LayoutSetting, type ThemeMode, type WallpaperSetting, type WidgetItem, type WidgetSize, type WidgetType } from '../core/types';
+import { getWidgetDefinition } from '../features/widgets/registry';
+import { CONFIG_VERSION, LIBRARY_TILE_ID, SETTINGS_TILE_ID, isValidTileSize, type AppConfig, type AppItem, type DesktopTile, type LayoutSetting, type Placement, type ThemeMode, type WallpaperSetting, type WidgetItem, type WidgetSize, type WidgetType } from '../core/types';
+import { clamp, overlap, packTiles, type PlacedTile } from '../core/board';
 
 export const useConfigStore = defineStore('config', () => {
   const config = ref<AppConfig | null>(null);
@@ -76,7 +78,41 @@ export const useConfigStore = defineStore('config', () => {
     return max + 1;
   }
 
-  /** 将应用固定到指定屏末尾（从应用库固定） */
+  /** 当前屏宽（格），用于默认落点与拖拽钳制 */
+  function screenWidthOf(): number {
+    return config.value?.layout.screenWidth ?? 6;
+  }
+
+  /** 某屏已占用的矩形区域（缺坐标按 0,0 计），供默认落点计算 */
+  function occupiedCells(screen: number): { col: number; row: number; cols: number; rows: number }[] {
+    const current = config.value;
+    if (!current) return [];
+    const list: { col: number; row: number; cols: number; rows: number }[] = [];
+    const collect = (p: Placement) => {
+      if (p.kind === 'tile' && p.screen === screen) {
+        list.push({ col: p.col ?? 0, row: p.row ?? 0, cols: p.cols, rows: p.rows });
+      }
+    };
+    current.apps.forEach((a) => collect(a.placement));
+    current.widgets.forEach((w) => collect(w.placement));
+    return list;
+  }
+
+  /** 某屏首个未占用的格子（行优先），作为新磁块的默认落点 */
+  function firstFreeCell(screen: number, cols: number, rows: number): { col: number; row: number } {
+    const width = screenWidthOf();
+    const occ = occupiedCells(screen);
+    const fits = (c: number, r: number) =>
+      !occ.some((o) => c < o.col + o.cols && c + cols > o.col && r < o.row + o.rows && r + rows > o.row);
+    for (let y = 0; y <= 24; y += 1) {
+      for (let x = 0; x + cols <= width; x += 1) {
+        if (fits(x, y)) return { col: x, row: y };
+      }
+    }
+    return { col: 0, row: 0 };
+  }
+
+  /** 将应用固定到指定屏（从应用库固定），落点为该屏首个空位 */
   function pinApp(appId: string, screen = 0): void {
     const current = config.value;
     if (!current) return;
@@ -84,7 +120,17 @@ export const useConfigStore = defineStore('config', () => {
       ...current,
       apps: current.apps.map((app) =>
         app.id === appId
-          ? { ...app, placement: { kind: 'tile', screen, slot: nextSlotOnScreen(screen), cols: 1, rows: 1 } }
+          ? {
+              ...app,
+              placement: {
+                ...firstFreeCell(screen, 1, 1),
+                kind: 'tile',
+                screen,
+                slot: nextSlotOnScreen(screen),
+                cols: 1,
+                rows: 1,
+              },
+            }
           : app,
       ),
     });
@@ -137,7 +183,7 @@ export const useConfigStore = defineStore('config', () => {
       fullIcon: input.fullIcon,
       description: input.description || undefined,
       source: 'user',
-      placement: { kind: 'tile', screen, slot: nextSlotOnScreen(screen), cols: 1, rows: 1 },
+      placement: { ...firstFreeCell(screen, 1, 1), kind: 'tile', screen, slot: nextSlotOnScreen(screen), cols: 1, rows: 1 },
     };
     config.value = normalize({ ...current, apps: [...current.apps, app] });
     persist();
@@ -152,7 +198,7 @@ export const useConfigStore = defineStore('config', () => {
       type,
       size,
       props: widgetProps,
-      placement: { kind: 'tile', screen, slot: nextSlotOnScreen(screen), ...size },
+      placement: { ...firstFreeCell(screen, size.cols, size.rows), kind: 'tile', screen, slot: nextSlotOnScreen(screen), ...size },
     };
     config.value = normalize({ ...current, widgets: [...current.widgets, widget] });
     persist();
@@ -172,7 +218,10 @@ export const useConfigStore = defineStore('config', () => {
   /** 调整磁块尺寸（应用或小组件），尺寸非法时忽略 */
   function resizeTile(tileId: string, cols: number, rows: number): void {
     const current = config.value;
-    if (!current || !isValidTileSize(cols, rows)) return;
+    if (!current) return;
+    const widget = current.widgets.find((w) => w.id === tileId);
+    const min = widget ? getWidgetDefinition(widget.type)?.minSize : undefined;
+    if (!isValidTileSize(cols, rows, min)) return;
     config.value = normalize({
       ...current,
       apps: current.apps.map((app) =>
@@ -198,21 +247,66 @@ export const useConfigStore = defineStore('config', () => {
   }
 
   /**
-   * 压缩布局：移除没有任何磁块的空屏（应用库磁块恒在屏上，至少保留第一屏）。
-   * 屏内为 dense 自动排布，空行在结构上不会残留，无需单独处理。
+   * 压缩布局（保存时调用）：
+   * 1. 逐屏删除完全没有任何磁块的行，后续行整体上移，使内容连续；
+   * 2. 删除完全空着的屏并重新编号，至少保留第一屏。
+   * 用户对磁块的排布（含错位、留白）在屏内得到完整保留，仅清掉“整行空”与“整屏空”。
    */
-  function compactScreens(): void {
+  function compactLayout(): void {
     const current = config.value;
     if (!current) return;
-    let maxScreen = 0;
-    for (const app of current.apps) {
-      if (app.placement.kind === 'tile') maxScreen = Math.max(maxScreen, app.placement.screen);
+    let apps: AppItem[] = current.apps.map((app) => ({ ...app, placement: { ...app.placement } }));
+    let widgets: WidgetItem[] = current.widgets.map((widget) => ({ ...widget, placement: { ...widget.placement } }));
+
+    for (let screen = 0; screen < current.screenCount; screen += 1) {
+      const onScreen = [...apps, ...widgets].filter(
+        (t) => t.placement.kind === 'tile' && t.placement.screen === screen,
+      );
+      if (onScreen.length === 0) continue;
+      const occupied = new Set<number>();
+      let maxRow = -1;
+      for (const t of onScreen) {
+        const p = t.placement;
+        if (p.kind !== 'tile') continue;
+        const base = p.row ?? 0;
+        for (let r = base; r < base + p.rows; r += 1) {
+          occupied.add(r);
+          maxRow = Math.max(maxRow, r);
+        }
+      }
+      const shiftFor = new Map<number, number>();
+      let shift = 0;
+      for (let r = 0; r <= maxRow; r += 1) {
+        if (!occupied.has(r)) shift += 1;
+        else shiftFor.set(r, shift);
+      }
+      for (const t of onScreen) {
+        const p = t.placement;
+        if (p.kind === 'tile' && occupied.has(p.row ?? 0)) {
+          p.row = (p.row ?? 0) - (shiftFor.get(p.row ?? 0) ?? 0);
+        }
+      }
     }
-    for (const widget of current.widgets) {
-      if (widget.placement.kind === 'tile') maxScreen = Math.max(maxScreen, widget.placement.screen);
+
+    const used = new Set<number>();
+    for (const t of [...apps, ...widgets]) {
+      if (t.placement.kind === 'tile') used.add(t.placement.screen);
     }
-    if (current.screenCount === maxScreen + 1) return;
-    config.value = normalize({ ...current, screenCount: maxScreen + 1 });
+    const ordered = [...used].sort((a, b) => a - b);
+    const screenMap = new Map<number, number>();
+    ordered.forEach((s, index) => screenMap.set(s, index));
+    apps = apps.map((app) =>
+      app.placement.kind === 'tile' && screenMap.has(app.placement.screen)
+        ? { ...app, placement: { ...app.placement, screen: screenMap.get(app.placement.screen)! } }
+        : app,
+    );
+    widgets = widgets.map((widget) =>
+      widget.placement.kind === 'tile' && screenMap.has(widget.placement.screen)
+        ? { ...widget, placement: { ...widget.placement, screen: screenMap.get(widget.placement.screen)! } }
+        : widget,
+    );
+
+    config.value = normalize({ ...current, apps, widgets, screenCount: Math.max(1, ordered.length) });
     persist();
   }
 
@@ -253,26 +347,81 @@ export const useConfigStore = defineStore('config', () => {
     persist();
   }
 
-  /** 以拖拽后的 DOM 顺序回写各屏槽位 */
-  function applyTileOrder(order: { screens: DomEntry[][] }): void {
+  /**
+   * 移动磁块到目标屏的指定格（自由摆放）：
+   * - 落点与同屏其它磁块重叠时，同屏则交换两者位置，跨屏则把被占磁块挤到该屏空位；
+   * - 列钳制在 [0, maxCols-宽度]，行不小于 0（多余空行在保存时压缩）。
+   * 其余磁块位置不受影响——排布完全由用户决定。
+   * 落点已由拖拽框架吸附并钳制，此处只做冲突处理与落库。
+   */
+  function moveTileTo(id: string, toScreen: number, col: number, row: number): void {
     const current = config.value;
     if (!current) return;
-    const placements = new Map<string, { screen: number; slot: number }>();
-    order.screens.forEach((entries, screen) => {
-      entries.forEach((entry, slot) => placements.set(entry.id, { screen, slot }));
+    const app = current.apps.find((a) => a.id === id);
+    const widget = current.widgets.find((w) => w.id === id);
+    const item = app || widget;
+    if (!item || item.placement.kind !== 'tile') return;
+    const cols = item.placement.cols;
+    const rows = item.placement.rows;
+    const fromScreen = item.placement.screen;
+    const fromCol = item.placement.col ?? 0;
+    const fromRow = item.placement.row ?? 0;
+    const maxCols = Math.max(1, current.layout.screenWidth);
+
+    const targetCol = clamp(Math.max(0, col), 0, Math.max(0, maxCols - cols));
+    const targetRow = Math.max(0, row);
+
+    // 用框架打包器解析目标屏其余磁块位置，判断落点是否被占用（历史缺坐标的磁块也能正确参与）
+    const others = [...current.apps, ...current.widgets].filter(
+      (t) => t !== item && t.placement.kind === 'tile' && t.placement.screen === toScreen,
+    );
+    const positions = packTiles(
+      others.map((t) => {
+        const p = t.placement as Extract<Placement, { kind: 'tile' }>;
+        const base: PlacedTile = { id: t.id, cols: p.cols, rows: p.rows };
+        if (p.col !== undefined && p.row !== undefined) {
+          base.col = p.col;
+          base.row = p.row;
+        }
+        return base;
+      }),
+      maxCols,
+    );
+    const hit = others.find((t) => {
+      const pos = positions.get(t.id);
+      if (!pos) return false;
+      const p = t.placement as Extract<Placement, { kind: 'tile' }>;
+      return overlap(
+        { col: targetCol, row: targetRow, cols, rows },
+        { col: pos.col, row: pos.row, cols: p.cols, rows: p.rows },
+      );
     });
+
+    let displaced: { item: AppItem | WidgetItem; col: number; row: number } | null = null;
+    if (hit) {
+      const hp = hit.placement as Extract<Placement, { kind: 'tile' }>;
+      if (fromScreen === toScreen) {
+        displaced = { item: hit, col: fromCol, row: fromRow };
+      } else {
+        const free = firstFreeCell(toScreen, hp.cols, hp.rows);
+        displaced = { item: hit, col: free.col, row: free.row };
+      }
+    }
+
+    const apply = <T extends AppItem | WidgetItem>(t: T): T => {
+      if (t === item && t.placement.kind === 'tile') {
+        return { ...t, placement: { ...t.placement, screen: toScreen, col: targetCol, row: targetRow } };
+      }
+      if (displaced && t === displaced.item && t.placement.kind === 'tile') {
+        return { ...t, placement: { ...t.placement, col: displaced.col, row: displaced.row } };
+      }
+      return t;
+    };
+
     config.value = normalize({
       ...current,
-      apps: current.apps.map((app) => {
-        const position = placements.get(app.id);
-        if (!position || app.placement.kind !== 'tile') return app;
-        return { ...app, placement: { ...app.placement, screen: position.screen, slot: position.slot } };
-      }),
-      widgets: current.widgets.map((widget) => {
-        const position = placements.get(widget.id);
-        if (!position || widget.placement.kind !== 'tile') return widget;
-        return { ...widget, placement: { ...widget.placement, screen: position.screen, slot: position.slot } };
-      }),
+      apps: current.apps.map(apply),
+      widgets: current.widgets.map(apply),
     });
     persist();
   }
@@ -341,8 +490,8 @@ export const useConfigStore = defineStore('config', () => {
     resizeTile,
     addScreen,
     removeScreen,
-    compactScreens,
-    applyTileOrder,
+    compactLayout,
+    moveTileTo,
     setWallpaper,
     updateLayout,
     setTheme,

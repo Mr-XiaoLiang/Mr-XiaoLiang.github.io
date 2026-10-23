@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import Sortable from 'sortablejs';
+import { computed, ref, watchEffect } from 'vue';
 import Tile from './Tile.vue';
 import { useEditMode } from './editState';
-import { handleTileDrop } from './dragSync';
+import { useConfigStore } from '../../stores/config';
+import { packTiles, type PlacedTile } from '../../core/board';
+import { beginDrag, dragState, registerScreen, unregisterScreen } from '../../core/drag';
 import type { DesktopTile } from '../../core/types';
 
-defineProps<{
+const props = defineProps<{
   screen: number;
   tiles: DesktopTile[];
   /** 单元格边长（px） */
@@ -30,44 +31,83 @@ const emit = defineEmits<{
 }>();
 
 const { editing } = useEditMode();
+const store = useConfigStore();
 
-const root = ref<HTMLElement | null>(null);
-let sortable: Sortable | null = null;
-
-function createSortable(element: HTMLElement) {
-  sortable = new Sortable(element, {
-    group: 'tiles',
-    animation: 200,
-    draggable: '.tile',
-    filter: '.no-drag',
-    // 避免 SortableJS 对过滤元素调用 preventDefault 吞掉点击（徽标、手柄、添加瓦片）
-    preventOnFilter: false,
-    ghostClass: 'tile-ghost',
-    onEnd: handleTileDrop,
-  });
+function sizeOf(tile: DesktopTile): { cols: number; rows: number } {
+  if (tile.kind === 'widget') return tile.widget.size;
+  const p = tile.app.placement;
+  return p.kind === 'tile' ? { cols: p.cols, rows: p.rows } : { cols: 1, rows: 1 };
 }
 
-// 编辑状态变化时挂载或销毁拖拽
-watch(editing, (active) => {
-  if (active && root.value && !sortable) {
-    createSortable(root.value);
-  } else if (!active && sortable) {
-    sortable.destroy();
-    sortable = null;
-  }
+function hasExplicit(tile: DesktopTile): boolean {
+  const p = tile.kind === 'widget' ? tile.widget.placement : tile.app.placement;
+  return p.kind === 'tile' && p.col !== undefined && p.row !== undefined;
+}
+
+function explicitOf(tile: DesktopTile): { col: number; row: number } {
+  const p = tile.kind === 'widget' ? tile.widget.placement : tile.app.placement;
+  if (p.kind === 'tile' && p.col !== undefined && p.row !== undefined) return { col: p.col, row: p.row };
+  return { col: 0, row: 0 };
+}
+
+/** 用框架的打包器解析本屏各磁块坐标：显式坐标优先，缺失者行优先填入首个空位 */
+const resolved = computed(() => {
+  const placed: PlacedTile[] = props.tiles.map((tile) => {
+    const size = sizeOf(tile);
+    const base: PlacedTile = { id: tile.key, cols: size.cols, rows: size.rows };
+    if (hasExplicit(tile)) {
+      const ex = explicitOf(tile);
+      base.col = ex.col;
+      base.row = ex.row;
+    }
+    return base;
+  });
+  const positions = packTiles(placed, props.maxCols);
+  return props.tiles.map((tile) => ({ tile, pos: positions.get(tile.key)! }));
 });
 
-// 编辑模式中新增的屏（如新屏瓦片）挂载时即补建拖拽实例
-onMounted(() => {
-  if (editing.value && root.value && !sortable) {
-    createSortable(root.value);
-  }
+/** 编辑态棋盘需要展示的行数（内容之下留若干空行供摆放） */
+const boardRows = computed(() => {
+  let maxRow = -1;
+  for (const entry of resolved.value) maxRow = Math.max(maxRow, entry.pos.row + sizeOf(entry.tile).rows);
+  return Math.max(6, maxRow + 4);
 });
 
-onBeforeUnmount(() => {
-  sortable?.destroy();
-  sortable = null;
+const root = ref<HTMLElement | null>(null);
+
+/** 把本屏几何注册进拖拽框架，供落点解析使用；相关参数变化时自动重注册 */
+watchEffect((onCleanup) => {
+  if (!root.value) return;
+  registerScreen({
+    screen: props.screen,
+    maxCols: props.maxCols,
+    boardRows: boardRows.value,
+    cell: props.cell,
+    gap: props.gap,
+    el: root.value,
+  });
+  onCleanup(() => unregisterScreen(props.screen));
 });
+
+function onGridPointerDown(event: PointerEvent) {
+  if (!editing.value) return;
+  const target = event.target as HTMLElement;
+  if (target.closest('.no-drag')) return;
+  const tileEl = target.closest('.tile') as HTMLElement | null;
+  if (!tileEl) return;
+  const tileId = tileEl.dataset.tileId || tileEl.dataset.widgetId;
+  if (!tileId) return;
+  const entry = props.tiles.find((t) => t.key === tileId);
+  if (!entry) return;
+  const size = sizeOf(entry);
+  beginDrag(event, {
+    id: tileId,
+    cols: size.cols,
+    rows: size.rows,
+    element: tileEl,
+    onDrop: (target) => store.moveTileTo(tileId, target.screen, target.col, target.row),
+  });
+}
 
 function onTileResize(id: string, cols: number, rows: number) {
   emit('resize', id, cols, rows);
@@ -88,40 +128,56 @@ function onTileResize(id: string, cols: number, rows: number) {
     <div
       ref="root"
       class="screen-grid"
-      :data-screen-list="screen"
+      :class="{ board: editing }"
+      :data-screen="screen"
       :style="{
         gridTemplateColumns: `repeat(${maxCols}, ${cell}px)`,
         gridAutoRows: `${cell}px`,
+        gridTemplateRows: editing ? `repeat(${boardRows}, ${cell}px)` : 'none',
         gap: `${gap}px`,
-        minHeight: `${cell * 2 + gap}px`,
+        '--cell': `${cell}px`,
+        '--gap': `${gap}px`,
       }"
+      @pointerdown="onGridPointerDown"
     >
       <Tile
-        v-for="tile in tiles"
-        :key="tile.key"
-        :app="tile.kind === 'app' ? tile.app : undefined"
-        :widget="tile.kind === 'widget' ? tile.widget : undefined"
+        v-for="entry in resolved"
+        :key="entry.tile.key"
+        :app="entry.tile.kind === 'app' ? entry.tile.app : undefined"
+        :widget="entry.tile.kind === 'widget' ? entry.tile.widget : undefined"
         :cell="cell"
         :gap="gap"
         :max-cols="maxCols"
-        @remove="tile.kind === 'widget' ? emit('remove-widget', $event) : emit('remove', $event)"
+        :col="entry.pos.col"
+        :row="entry.pos.row"
+        @remove="entry.tile.kind === 'widget' ? emit('remove-widget', $event) : emit('remove', $event)"
         @resize="onTileResize"
         @open-library="emit('open-library')"
         @open-settings="emit('open-settings')"
       />
-      <button
-        v-if="editing && isLast"
-        type="button"
-        class="tile-add tile-add-screen no-drag"
-        @click.stop="emit('add-screen')"
-      >
-        <span class="tile-add-sign">+</span>
-        <span class="tile-add-label">新屏</span>
-      </button>
+      <div
+        v-if="editing && dragState.active && dragState.target?.screen === screen"
+        class="drop-highlight"
+        aria-hidden="true"
+        :style="{
+          gridColumn: `${dragState.target.col + 1} / span ${dragState.cols}`,
+          gridRow: `${dragState.target.row + 1} / span ${dragState.rows}`,
+        }"
+      ></div>
       <div v-if="tiles.length === 0" class="screen-placeholder">
         <span class="screen-placeholder-text">空屏，打开应用库固定磁块</span>
       </div>
     </div>
+    <button
+      v-if="editing && isLast"
+      type="button"
+      class="tile-add tile-add-screen no-drag"
+      :style="{ marginTop: `${gap}px`, minHeight: `${cell}px` }"
+      @click.stop="emit('add-screen')"
+    >
+      <span class="tile-add-sign">+</span>
+      <span class="tile-add-label">新屏</span>
+    </button>
   </section>
 </template>
 
@@ -133,9 +189,17 @@ function onTileResize(id: string, cols: number, rows: number) {
 
 .screen-grid {
   display: grid;
-  grid-auto-flow: row dense;
   align-content: start;
   min-height: 100%;
+}
+
+/* 编辑态：棋盘底纹，提示可自由摆放 */
+.screen-grid.board {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.08) 1px, transparent 1px);
+  background-size: calc(var(--cell) + var(--gap)) calc(var(--cell) + var(--gap));
+  background-position: 0 0;
 }
 
 .screen-remove {
@@ -157,6 +221,15 @@ function onTileResize(id: string, cols: number, rows: number) {
   cursor: pointer;
 }
 
+.drop-highlight {
+  z-index: 1;
+  border-radius: 0;
+  background: rgb(255 255 255 / 0.18);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+
 .tile-add {
   display: flex;
   flex-direction: column;
@@ -173,7 +246,7 @@ function onTileResize(id: string, cols: number, rows: number) {
 }
 
 .tile-add-screen {
-  align-self: start;
+  width: 100%;
 }
 
 .tile-add-sign {
@@ -186,7 +259,6 @@ function onTileResize(id: string, cols: number, rows: number) {
   font-size: 11px;
 }
 
-/* 空屏占位：标示屏范围，引导拖入磁块 */
 .screen-placeholder {
   grid-column: 1 / -1;
   grid-row: 1 / span 2;

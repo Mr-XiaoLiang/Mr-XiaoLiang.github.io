@@ -74,10 +74,12 @@ push 到 `main` 即由 GitHub Actions 自动构建并发布到 GitHub Pages。�
 ```
 src/
 ├── core/          # 框架无关内核：类型、模型、持久化、预设、布局计算、搜索引擎、取色
+│   ├── board.ts   # 棋盘布局引擎（纯函数）：坐标打包、碰撞、拖拽落点吸附解析
+│   └── drag.ts    # 拖拽框架（响应式控制器）：指针捕获、1:1 跟手、落点高亮、边缘自动滚动
 ├── composables/   # useTheme（主题初始化）、useLayoutMetrics（格尺寸测量）等组合式函数
 ├── stores/        # Pinia 配置 store（唯一数据源）
 ├── features/
-│   ├── desktop/   # DesktopView、ScreenGrid、Tile、编辑态、拖拽同步、添加面板
+│   ├── desktop/   # DesktopView、ScreenGrid、Tile、编辑态、添加面板
 │   ├── library/   # AppLibrary（Win8 双 Tab + 字母宫格）、LetterJump
 │   ├── widgets/   # 小组件注册表与四个内置小组件
 │   ├── wallpaper/ # 壁纸层与动态光晕
@@ -85,3 +87,17 @@ src/
 public/
 ├── Apps.json / Widgets.json / CNAME
 ```
+
+### 布局与拖拽框架
+
+布局与拖拽是独立的两层，业务（应用 / 小组件）不参与其中：
+
+- `core/board.ts` 纯函数引擎：磁块坐标打包（显式坐标优先，缺失者行优先补位）、
+  碰撞检测、以及「指针 + 抓取偏移 → 目标屏 / 目标格」的吸附解析。
+- `core/drag.ts` 拖拽控制器：`beginDrag` 后用指针捕获保证事件不中断，被拖磁块以
+  `position: fixed + translate3d` 逐帧 1:1 跟手；落点通过各屏注册的实时矩形解析，
+  以 `dragState.target` 响应式暴露给界面渲染高亮；靠近滚动容器上下边缘自动滚动。
+- 存储态即渲染态：归一化时为每块磁块写入显式 `col/row`，保存压缩与碰撞检测
+  不再依赖“缺坐标按 0,0 处理”的猜测。
+- 业务接入点只有一处：拖拽结束回调里调用 `store.moveTileTo(id, screen, col, row)`。
+

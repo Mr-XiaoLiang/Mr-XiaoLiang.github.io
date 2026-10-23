@@ -23,7 +23,18 @@ export interface LayoutInput {
   screenWidth: number;
 }
 
-/** 三档密度对应的单元格基准尺寸与间距 */
+/**
+ * 布局尺寸表（依据 Win8 / WP8 Metro 规范：磁块为 1:1 直角方块，
+ * 磁块间隙约为格边长的 1/9~1/11；屏间距大于格间距）。
+ *
+ * | 密度   | 格边长 cell | 格间距 gap | 间隙/格边 | 屏间距 screenGap |
+ * |--------|-----------|-----------|----------|-----------------|
+ * | loose  | 108px     | 12px      | 11.1%    | 36px            |
+ * | regular| 88px      | 10px      | 11.4%    | 30px            |
+ * | compact| 72px      | 8px       | 11.1%    | 24px            |
+ *
+ * 间隙统一收敛到 ~11%，避免磁块之间留白过大；屏间距保持为格间距的 3 倍。
+ */
 const CELL_SIZE: Record<Density, number> = {
   loose: 108,
   regular: 88,
@@ -31,9 +42,9 @@ const CELL_SIZE: Record<Density, number> = {
 };
 
 const GRID_GAP: Record<Density, number> = {
-  loose: 22,
-  regular: 16,
-  compact: 10,
+  loose: 12,
+  regular: 10,
+  compact: 8,
 };
 
 /** 屏宽边界：最小 4 格，最大 8 格 */

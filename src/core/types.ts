@@ -7,11 +7,20 @@ export const LIBRARY_TILE_ID = 'system:library';
 /** 设置磁块的固定 id，可取消固定但不可删除（始终在应用库中） */
 export const SETTINGS_TILE_ID = 'system:settings';
 
-/** 磁块合法尺寸：任一边为 1 时另一边不超过 2，其余组合 2-4 */
-export const MAX_TILE_SPAN = 4;
+/** 磁块最大跨度（格）。屏宽上限同为 8，1 行/1 列磁块可横跨整屏 */
+export const MAX_TILE_SPAN = 8;
 
-export function isValidTileSize(cols: number, rows: number): boolean {
+/**
+ * 磁块合法尺寸：
+ * - 未声明最小尺寸（普通应用磁块）：任一边为 1 时另一边不超过 2，其余组合 2–MAX_TILE_SPAN
+ * - 声明了最小尺寸（小组件）：以其最小尺寸为下界，允许 1 行宽条等自由形态，跨度不超过 MAX_TILE_SPAN
+ */
+export function isValidTileSize(cols: number, rows: number, min?: WidgetSize): boolean {
   if (cols < 1 || rows < 1 || cols > MAX_TILE_SPAN || rows > MAX_TILE_SPAN) return false;
+  if (min) {
+    if (cols < min.cols || rows < min.rows) return false;
+    return true;
+  }
   if (cols === 1 || rows === 1) return Math.max(cols, rows) <= 2;
   return true;
 }
@@ -22,7 +31,7 @@ export function isValidTileSize(cols: number, rows: number): boolean {
  * - library：未固定到屏幕的应用
  */
 export type Placement =
-  | { kind: 'tile'; screen: number; slot: number; cols: number; rows: number }
+  | { kind: 'tile'; screen: number; slot: number; cols: number; rows: number; col?: number; row?: number }
   | { kind: 'library' };
 
 export type AppSource = 'preset' | 'user';

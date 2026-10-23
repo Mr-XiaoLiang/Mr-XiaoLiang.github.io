@@ -90,11 +90,6 @@ body {
   background: linear-gradient(180deg, rgb(0 0 0 / 0.08), transparent 20%, transparent 80%, rgb(0 0 0 / 0.1));
 }
 
-/* SortableJS 拖拽占位淡化（磁块 ghost） */
-.tile-ghost {
-  opacity: 0.3;
-}
-
 /* ===== Win8 扁平化通用控件 ===== */
 
 /* 整页浮层：纯黑（或纯白）底、直角、无模糊 */

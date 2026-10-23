@@ -1,4 +1,6 @@
 import { DEFAULT_SEARCH_ENGINE } from './search';
+import { clamp, packTiles, type PlacedTile } from './board';
+import { SCREEN_WIDTH_LIMITS } from './grid';
 import {
   CONFIG_VERSION,
   LIBRARY_TILE_ID,
@@ -112,6 +114,8 @@ function usedScreenCount(apps: AppItem[], widgets: WidgetItem[]): number {
  * 归一化：
  * - 确保应用库磁块存在
  * - 每屏按槽位重排为连续序号（应用与小组件共用序列）
+ * - 用棋盘打包器为每块磁块写入显式坐标，存储态与渲染态共用同一套坐标，
+ *   保存压缩、碰撞检测不再依赖“缺坐标按 0,0 处理”的猜测
  * - 屏数量兜底，不丢条目
  */
 export function normalize(config: AppConfig): AppConfig {
@@ -124,6 +128,11 @@ export function normalize(config: AppConfig): AppConfig {
     placement: { ...widget.placement },
   }));
 
+  const maxCols = clamp(
+    config.layout.screenWidth,
+    SCREEN_WIDTH_LIMITS.min,
+    SCREEN_WIDTH_LIMITS.max,
+  );
   const screenCount = Math.max(1, config.screenCount, usedScreenCount(apps, widgets));
   for (let screen = 0; screen < screenCount; screen += 1) {
     const onScreen: DesktopTile[] = [
@@ -146,6 +155,28 @@ export function normalize(config: AppConfig): AppConfig {
         item.widget.placement.slot = index;
       }
     });
+
+    const positions = packTiles(
+      onScreen.map((item): PlacedTile => {
+        const p = item.kind === 'app' ? item.app.placement : item.widget.placement;
+        if (p.kind !== 'tile') return { id: item.key, cols: 1, rows: 1 };
+        const base: PlacedTile = { id: item.key, cols: p.cols, rows: p.rows };
+        if (p.col !== undefined && p.row !== undefined) {
+          base.col = p.col;
+          base.row = p.row;
+        }
+        return base;
+      }),
+      maxCols,
+    );
+    for (const item of onScreen) {
+      const pos = positions.get(item.key);
+      const p = item.kind === 'app' ? item.app.placement : item.widget.placement;
+      if (pos && p.kind === 'tile') {
+        p.col = pos.col;
+        p.row = pos.row;
+      }
+    }
   }
 
   return { ...config, version: CONFIG_VERSION, screenCount, apps, widgets };
@@ -161,7 +192,11 @@ export function mergePresets(stored: AppConfig | null, presetApps: AppItem[]): A
   if (!stored) return normalize(defaultConfig(presetApps));
   const presetIds = new Set(presetApps.map((app) => app.id));
   const hidden = new Set(stored.hiddenPresetIds ?? []);
-  const kept = stored.apps.filter((app) => app.source !== 'preset' || presetIds.has(app.id));
+  // 系统磁块（应用库、设置）不属于预设清单，合并时始终保留，避免刷新后被误判为已消失的预设
+  const isSystem = (id: string): boolean => id === LIBRARY_TILE_ID || id === SETTINGS_TILE_ID;
+  const kept = stored.apps.filter(
+    (app) => isSystem(app.id) || app.source !== 'preset' || presetIds.has(app.id),
+  );
   const known = new Set(kept.map((app) => app.id));
   const fresh = presetApps.filter((app) => !known.has(app.id) && !hidden.has(app.id));
   return normalize({ ...stored, apps: [...kept, ...fresh] });

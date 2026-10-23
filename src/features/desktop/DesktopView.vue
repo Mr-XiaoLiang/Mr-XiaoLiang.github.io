@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useConfigStore } from '../../stores/config';
 import { useLayoutMetrics } from '../../composables/useLayoutMetrics';
 import { screenWidthPx } from '../../core/grid';
+import { setScrollContainer } from '../../core/drag';
 import { useEditMode } from './editState';
 import WallpaperLayer from '../wallpaper/WallpaperLayer.vue';
 import ScreenGrid from './ScreenGrid.vue';
@@ -56,9 +57,9 @@ function onResize(id: string, cols: number, rows: number) {
   store.resizeTile(id, cols, rows);
 }
 
-// 退出编辑模式时压缩布局：移除空屏（dense 排布下空行不会残留）
+// 退出编辑模式（保存）时压缩布局：删除完全空着的行与屏，使内容连续
 watch(editing, (active) => {
-  if (!active) store.compactScreens();
+  if (!active) store.compactLayout();
 });
 
 function onAddApp(payload: AddAppPayload) {
@@ -94,12 +95,14 @@ onMounted(() => {
   window.addEventListener('keydown', onKeydown);
   window.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointercancel', onPointerUp);
+  setScrollContainer(area.value);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown);
   window.removeEventListener('pointerup', onPointerUp);
   window.removeEventListener('pointercancel', onPointerUp);
+  setScrollContainer(null);
 });
 </script>
 

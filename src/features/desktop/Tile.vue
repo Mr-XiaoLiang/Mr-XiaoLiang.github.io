@@ -15,6 +15,10 @@ const props = defineProps<{
   gap: number;
   /** 当前屏宽（格），尺寸钳制上限 */
   maxCols: number;
+  /** 显式列坐标（格），由打包引擎计算 */
+  col: number;
+  /** 显式行坐标（格），由打包引擎计算 */
+  row: number;
 }>();
 
 const emit = defineEmits<{
@@ -60,10 +64,11 @@ const definition = computed(() => (props.widget ? getWidgetDefinition(props.widg
 const color = computed(() => props.app?.color || tileColorFor(tileId.value));
 const fullIcon = computed(() => props.app?.fullIcon ?? '');
 
-/** 双维均不小于 2 格时展示名称与动态内容 */
+/** 双维均不小于 2 格时展示名称 */
 const isBig = computed(() => displayCols.value >= 2 && displayRows.value >= 2);
-const showName = computed(() => isBig.value && !definition.value?.hideTileName);
-const showLive = computed(() => isWidget.value && isBig.value);
+/** 小组件只要列宽足够即渲染实时内容（高度 1 也显示，不再回退为问号） */
+const showLive = computed(() => isWidget.value && displayCols.value >= 2);
+const showName = computed(() => isBig.value && !definition.value?.hideTileName && !showLive.value);
 
 const nameSize = computed(() => Math.min(15, Math.max(11, Math.round(props.cell * 0.15))));
 
@@ -91,7 +96,8 @@ function onResizeDown(event: PointerEvent) {
     const dy = Math.round((moveEvent.clientY - startY) / unit);
     const cols = Math.min(Math.max(startCols + dx, minCols.value), Math.min(props.maxCols, MAX_TILE_SPAN));
     const rows = Math.min(Math.max(startRows + dy, minRows.value), MAX_TILE_SPAN);
-    preview.value = snapSize(cols, rows);
+    // 小组件以声明的最小尺寸为下界，允许 1 行宽条等自由尺寸；应用磁块沿用通用吸附
+    preview.value = isWidget.value ? { cols, rows } : snapSize(cols, rows);
   };
 
   const up = () => {
@@ -130,8 +136,8 @@ function activate() {
     class="tile"
     :class="{ 'tile-editing': editing, 'tile-library': isLibrary }"
     :style="{
-      gridColumn: `span ${displayCols}`,
-      gridRow: `span ${displayRows}`,
+      gridColumn: `${col + 1} / span ${displayCols}`,
+      gridRow: `${row + 1} / span ${displayRows}`,
       background: color,
     }"
     :data-tile-id="tileId"
@@ -167,7 +173,7 @@ function activate() {
           :alt="app?.name ?? ''"
           @failed="faviconFailedId = tileId"
         />
-        <span v-else class="tile-initial">{{ (app?.name ?? '?').trim().charAt(0).toUpperCase() }}</span>
+        <span v-else class="tile-initial">{{ (app?.name ?? name ?? '?').trim().charAt(0).toUpperCase() }}</span>
       </div>
     </template>
 
@@ -216,6 +222,18 @@ function activate() {
 .tile-editing {
   outline: 2px solid rgb(255 255 255 / 0.28);
   outline-offset: -2px;
+  /* 编辑态下磁块自身可拖拽，禁用触摸滚动接管，保证跟手 */
+  touch-action: none;
+}
+
+.tile-dragging {
+  position: fixed !important;
+  z-index: 1000 !important;
+  margin: 0 !important;
+  /* 禁用过渡与按压缩放，保证位移逐帧跟手（行内 transform 始终由拖拽框架写入） */
+  transition: none !important;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.55);
+  cursor: grabbing;
 }
 
 .tile-full {
