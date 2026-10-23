@@ -132,7 +132,6 @@ onBeforeUnmount(() => {
           @add-screen="store.addScreen"
           @open-library="libraryOpen = true"
           @open-settings="onOpenSettings"
-          @remove-screen="store.removeScreen(screen)"
         />
       </div>
     </div>

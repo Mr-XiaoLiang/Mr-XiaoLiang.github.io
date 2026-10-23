@@ -310,43 +310,6 @@ export const useConfigStore = defineStore('config', () => {
     persist();
   }
 
-  /** 删除指定屏：屏内应用移入应用库、小组件移入相邻屏，后续屏序号前移 */
-  function removeScreen(screen: number): void {
-    const current = config.value;
-    if (!current || current.screenCount <= 1) return;
-    const targetScreen = Math.max(0, screen - 1);
-    config.value = normalize({
-      ...current,
-      screenCount: current.screenCount - 1,
-      apps: current.apps.map((app) => {
-        if (app.placement.kind !== 'tile') return app;
-        if (app.placement.screen === screen) {
-          // 应用库磁块不允许移走，跟随到相邻屏
-          if (app.id === LIBRARY_TILE_ID) {
-            return { ...app, placement: { ...app.placement, screen: targetScreen } };
-          }
-          return { ...app, placement: { kind: 'library' } };
-        }
-        if (app.placement.screen > screen) {
-          return { ...app, placement: { ...app.placement, screen: app.placement.screen - 1 } };
-        }
-        return app;
-      }),
-      widgets: current.widgets.map((widget) => {
-        if (widget.placement.kind !== 'tile') return widget;
-        if (widget.placement.screen === screen) {
-          // 小组件无应用库可去，落到相邻屏末尾
-          return { ...widget, placement: { ...widget.placement, screen: targetScreen, slot: Number.MAX_SAFE_INTEGER } };
-        }
-        if (widget.placement.screen > screen) {
-          return { ...widget, placement: { ...widget.placement, screen: widget.placement.screen - 1 } };
-        }
-        return widget;
-      }),
-    });
-    persist();
-  }
-
   /**
    * 移动磁块到目标屏的指定格（自由摆放）：
    * - 落点与同屏其它磁块重叠时，同屏则交换两者位置，跨屏则把被占磁块挤到该屏空位；
@@ -489,7 +452,6 @@ export const useConfigStore = defineStore('config', () => {
     removeWidget,
     resizeTile,
     addScreen,
-    removeScreen,
     compactLayout,
     moveTileTo,
     setWallpaper,

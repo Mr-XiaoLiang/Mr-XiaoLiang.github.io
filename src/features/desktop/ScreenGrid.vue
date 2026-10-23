@@ -27,7 +27,6 @@ const emit = defineEmits<{
   (e: 'add-screen'): void;
   (e: 'open-library'): void;
   (e: 'open-settings'): void;
-  (e: 'remove-screen'): void;
 }>();
 
 const { editing } = useEditMode();
@@ -116,15 +115,6 @@ function onTileResize(id: string, cols: number, rows: number) {
 
 <template>
   <section class="screen">
-    <button
-      v-if="editing && screen > 0"
-      type="button"
-      class="screen-remove no-drag"
-      aria-label="删除此屏"
-      @click.stop="emit('remove-screen')"
-    >
-      ×
-    </button>
     <div
       ref="root"
       class="screen-grid"
@@ -215,25 +205,6 @@ function onTileResize(id: string, cols: number, rows: number) {
     );
   background-size: calc(var(--cell) + var(--gap)) calc(var(--cell) + var(--gap));
   background-position: 0 0;
-}
-
-.screen-remove {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: rgb(22 24 32 / 0.85);
-  color: #fff;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
 }
 
 .drop-highlight {
