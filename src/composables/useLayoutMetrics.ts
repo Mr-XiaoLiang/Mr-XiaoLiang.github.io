@@ -23,7 +23,6 @@ export function useLayoutMetrics(target: Ref<HTMLElement | null>, layout: Ref<La
   const metrics = computed<LayoutMetrics>(() =>
     computeLayout({
       width: width.value,
-      paddingX: 24,
       density: layout.value.density,
       screenWidth: layout.value.screenWidth,
     }),

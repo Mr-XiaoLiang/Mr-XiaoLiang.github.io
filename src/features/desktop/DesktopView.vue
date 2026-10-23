@@ -110,7 +110,11 @@ onBeforeUnmount(() => {
   <WallpaperLayer v-if="store.config" :setting="store.config.wallpaper" />
   <main class="desktop" @pointerdown="onPointerDown">
     <EditToolbar v-if="editing" />
-    <div ref="area" class="screens-scroll">
+    <div
+      ref="area"
+      class="screens-scroll"
+      :style="{ paddingLeft: `${metrics.paddingX}px`, paddingRight: `${metrics.paddingX}px` }"
+    >
       <div class="screens" :style="{ gap: `${metrics.screenGap}px` }">
         <ScreenGrid
           v-for="screen in screens"
@@ -165,7 +169,8 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: max(16px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  /* 左右边距由布局比例尺 metrics.paddingX 内联控制，与可用宽度计算保持一致 */
+  padding: max(16px, env(safe-area-inset-top)) 0 max(24px, env(safe-area-inset-bottom));
 }
 
 .screens {
