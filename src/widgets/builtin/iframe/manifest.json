@@ -1,0 +1,15 @@
+{
+  "protocol": 1,
+  "id": "iframe",
+  "name": "网页",
+  "description": "以 iframe 加载的网页小组件",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 4, "rows": 4 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 2 },
+    { "cols": 4, "rows": 4 }
+  ],
+  "hideTileName": true
+}

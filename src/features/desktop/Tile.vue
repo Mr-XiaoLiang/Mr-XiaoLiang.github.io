@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { getWidgetDefinition } from '../widgets/registry';
+import { getWidgetDefinition } from '../../widgets';
 import FaviconImage from './FaviconImage.vue';
 import { useEditMode } from './editState';
 import { tileColorFor } from '../../core/theme';
@@ -246,6 +246,9 @@ function activate() {
 .tile-live {
   position: absolute;
   inset: 0;
+  /* 强制裁剪：小组件协议禁止内部滚动，任何溢出内容被裁掉而非形成可滚动区域，
+     以免抢占用户对桌面页面的滚动手势 */
+  overflow: hidden;
   /* 小组件容器查询基准放在这里，避免 .tile 因 container-type 建立 stacking context
      而把手柄的 z-index 困在磁贴内部（导致悬浮手柄被相邻磁贴压住） */
   container-type: size;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue';
-import { useConfigStore } from '../../stores/config';
-import { SEARCH_ENGINES, buildSearchUrl } from '../../core/search';
+import { useConfigStore } from '../../../stores/config';
+import { SEARCH_ENGINES, buildSearchUrl } from '../../../core/search';
 
 const store = useConfigStore();
 const query = ref('');

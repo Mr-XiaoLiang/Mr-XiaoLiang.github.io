@@ -1,0 +1,14 @@
+{
+  "protocol": 1,
+  "id": "clock",
+  "name": "时钟",
+  "description": "显示当前时间与日期",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 2, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 2 },
+    { "cols": 4, "rows": 4 }
+  ]
+}

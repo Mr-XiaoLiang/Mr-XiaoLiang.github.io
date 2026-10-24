@@ -56,7 +56,8 @@ export interface WidgetSize {
   rows: number;
 }
 
-export type WidgetType = 'clock' | 'search' | 'calendar' | 'iframe';
+/** 小组件类型即其协议 id（见 src/widgets/protocol.ts），内置与用户自定义小组件共用同一命名空间 */
+export type WidgetType = string;
 
 export interface WidgetItem {
   id: string;

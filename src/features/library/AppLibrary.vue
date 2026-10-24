@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useConfigStore } from '../../stores/config';
 import { fetchPresetWidgets, type PresetWidget } from '../../core/presets';
-import { WIDGET_REGISTRY, sizeLabel } from '../widgets/registry';
+import { listWidgets, sizeLabel } from '../../widgets';
 import { tileColorFor } from '../../core/theme';
 import FaviconImage from '../desktop/FaviconImage.vue';
 import LetterJump from './LetterJump.vue';
@@ -17,6 +17,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'open-settings'): void;
   (e: 'add-custom-app'): void;
+  (e: 'add-custom-widget'): void;
 }>();
 
 const store = useConfigStore();
@@ -27,6 +28,8 @@ const jumpOpen = ref(false);
 const groupRefs = ref<Record<string, HTMLElement | null>>({});
 const iframePresets = ref<PresetWidget[]>([]);
 const chosenSizes = ref<Record<string, WidgetSize>>({});
+const builtinWidgets = computed(() => listWidgets('builtin'));
+const userWidgets = computed(() => listWidgets('user'));
 const searchInput = ref<HTMLInputElement | null>(null);
 
 // 长按上下文菜单（Win8 风格）：按住应用行 500ms 弹出
@@ -153,6 +156,10 @@ function addWidget(type: Parameters<typeof store.addWidget>[0], size: WidgetSize
 function addIframeWidget(preset: PresetWidget) {
   const key = `iframe:${preset.name}`;
   addWidget('iframe', widgetSizeOf(key, { cols: 4, rows: 4 }), { url: preset.url, name: preset.name });
+}
+
+function deleteUserWidget(id: string) {
+  store.deleteUserWidget(id);
 }
 
 function isIframeSizeActive(presetName: string, size: WidgetSize): boolean {
@@ -292,7 +299,7 @@ onBeforeUnmount(() => {
       <section class="lib-group">
         <h3 class="lib-group-title">内置小组件</h3>
         <div class="widget-grid">
-          <article v-for="definition in WIDGET_REGISTRY" :key="definition.type" class="widget-card">
+          <article v-for="definition in builtinWidgets" :key="definition.id" class="widget-card">
             <h4 class="card-name">{{ definition.name }}</h4>
             <p class="card-desc">{{ definition.description }}</p>
             <div class="size-row">
@@ -301,8 +308,8 @@ onBeforeUnmount(() => {
                 :key="sizeLabel(size)"
                 type="button"
                 class="size-chip"
-                :class="{ active: widgetSizeOf(definition.type, definition.defaultSize).cols === size.cols && widgetSizeOf(definition.type, definition.defaultSize).rows === size.rows }"
-                @click="pickSize(definition.type, size)"
+                :class="{ active: widgetSizeOf(definition.id, definition.defaultSize).cols === size.cols && widgetSizeOf(definition.id, definition.defaultSize).rows === size.rows }"
+                @click="pickSize(definition.id, size)"
               >
                 {{ sizeLabel(size) }}
               </button>
@@ -310,7 +317,7 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="card-add"
-              @click="addWidget(definition.type, widgetSizeOf(definition.type, definition.defaultSize), {})"
+              @click="addWidget(definition.id, widgetSizeOf(definition.id, definition.defaultSize), {})"
             >
               添加
             </button>
@@ -339,6 +346,41 @@ onBeforeUnmount(() => {
           </article>
         </div>
         <p v-else class="lib-empty">未配置网页小组件，可在 Widgets.json 中添加</p>
+      </section>
+      <section class="lib-group">
+        <div class="lib-group-head">
+          <h3 class="lib-group-title">自定义小组件</h3>
+          <button type="button" class="row-pin" @click="emit('add-custom-widget')">添加小组件</button>
+        </div>
+        <div v-if="userWidgets.length" class="widget-grid">
+          <article v-for="definition in userWidgets" :key="definition.id" class="widget-card">
+            <h4 class="card-name">{{ definition.name }}</h4>
+            <p class="card-desc">{{ definition.description }}</p>
+            <div class="size-row">
+              <button
+                v-for="size in definition.quickSizes"
+                :key="sizeLabel(size)"
+                type="button"
+                class="size-chip"
+                :class="{ active: widgetSizeOf(definition.id, definition.defaultSize).cols === size.cols && widgetSizeOf(definition.id, definition.defaultSize).rows === size.rows }"
+                @click="pickSize(definition.id, size)"
+              >
+                {{ sizeLabel(size) }}
+              </button>
+            </div>
+            <div class="card-actions">
+              <button
+                type="button"
+                class="card-add"
+                @click="addWidget(definition.id, widgetSizeOf(definition.id, definition.defaultSize), {})"
+              >
+                添加
+              </button>
+              <button type="button" class="card-delete" @click="deleteUserWidget(definition.id)">删除</button>
+            </div>
+          </article>
+        </div>
+        <p v-else class="lib-empty">尚未添加自定义小组件</p>
       </section>
     </div>
 
@@ -649,6 +691,38 @@ onBeforeUnmount(() => {
 
 .card-add:active {
   filter: brightness(1.15);
+}
+
+.lib-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.card-actions .card-add {
+  flex: 1;
+}
+
+.card-delete {
+  flex: 1;
+  padding: 8px 0;
+  border: 2px solid var(--danger);
+  background: none;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.card-delete:hover {
+  background: rgb(229 20 0 / 0.12);
 }
 
 .lib-empty {

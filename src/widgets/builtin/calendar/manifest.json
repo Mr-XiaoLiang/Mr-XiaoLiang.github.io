@@ -1,0 +1,14 @@
+{
+  "protocol": 1,
+  "id": "calendar",
+  "name": "日历",
+  "description": "当月月历，高亮今日",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 3, "rows": 3 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 3 },
+    { "cols": 4, "rows": 4 }
+  ]
+}

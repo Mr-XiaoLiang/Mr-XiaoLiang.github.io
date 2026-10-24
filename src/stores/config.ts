@@ -4,7 +4,7 @@ import { mergePresets, normalize } from '../core/model';
 import { fetchPresetApps, presetToApp } from '../core/presets';
 import { loadConfig, saveConfig, clearConfig } from '../core/storage';
 import { newId, normalizeUrl } from '../core/utils';
-import { getWidgetDefinition } from '../features/widgets/registry';
+import { getWidgetDefinition, unregisterUserWidget } from '../widgets';
 import { CONFIG_VERSION, LIBRARY_TILE_ID, SETTINGS_TILE_ID, isValidTileSize, type AppConfig, type AppItem, type DesktopTile, type LayoutSetting, type Placement, type ThemeMode, type WallpaperSetting, type WidgetItem, type WidgetSize, type WidgetType } from '../core/types';
 import { clamp, overlap, packTiles, type PlacedTile } from '../core/board';
 
@@ -211,6 +211,18 @@ export const useConfigStore = defineStore('config', () => {
     config.value = normalize({
       ...current,
       widgets: current.widgets.filter((widget) => widget.id !== widgetId),
+    });
+    persist();
+  }
+
+  /** 删除用户自定义小组件：注销类型并移除其全部实例；内置小组件不可删除 */
+  function deleteUserWidget(widgetId: string): void {
+    const current = config.value;
+    if (!current) return;
+    if (!unregisterUserWidget(widgetId)) return;
+    config.value = normalize({
+      ...current,
+      widgets: current.widgets.filter((widget) => widget.type !== widgetId),
     });
     persist();
   }
@@ -450,6 +462,7 @@ export const useConfigStore = defineStore('config', () => {
     addUserApp,
     addWidget,
     removeWidget,
+    deleteUserWidget,
     resizeTile,
     addScreen,
     compactLayout,

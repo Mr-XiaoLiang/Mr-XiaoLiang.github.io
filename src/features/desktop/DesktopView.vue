@@ -10,6 +10,7 @@ import ScreenGrid from './ScreenGrid.vue';
 import EditToolbar from './EditToolbar.vue';
 import AddAppPanel from './AddAppPanel.vue';
 import type { AddAppPayload } from './AddAppPanel.vue';
+import AddWidgetPanel from './AddWidgetPanel.vue';
 import AppLibrary from '../library/AppLibrary.vue';
 import SettingsPanel from '../settings/SettingsPanel.vue';
 import type { LayoutSetting } from '../../core/types';
@@ -27,6 +28,7 @@ const screens = computed(() => Array.from({ length: store.screenCount }, (_, ind
 const screenWidth = computed(() => screenWidthPx(metrics.value));
 
 const addingApp = ref(false);
+const addingWidget = ref(false);
 const libraryOpen = ref(false);
 const settingsOpen = ref(false);
 
@@ -78,9 +80,16 @@ function onAddCustomApp() {
   addingApp.value = true;
 }
 
+// 自定义小组件：从应用库进入，关闭库后打开加载表单
+function onAddCustomWidget() {
+  libraryOpen.value = false;
+  addingWidget.value = true;
+}
+
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     if (addingApp.value) addingApp.value = false;
+    else if (addingWidget.value) addingWidget.value = false;
     else if (libraryOpen.value) libraryOpen.value = false;
     else if (settingsOpen.value) settingsOpen.value = false;
     else if (editing.value) exit();
@@ -140,12 +149,16 @@ onBeforeUnmount(() => {
     <AddAppPanel v-if="addingApp" @close="addingApp = false" @submit="onAddApp" />
   </transition>
   <transition name="flat">
+    <AddWidgetPanel v-if="addingWidget" @close="addingWidget = false" />
+  </transition>
+  <transition name="flat">
     <AppLibrary
       v-if="libraryOpen"
       :current-screen="0"
       @close="libraryOpen = false"
       @open-settings="onOpenSettings"
       @add-custom-app="onAddCustomApp"
+      @add-custom-widget="onAddCustomWidget"
     />
   </transition>
   <transition name="flat">
