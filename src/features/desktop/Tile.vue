@@ -13,6 +13,10 @@ const props = defineProps<{
   cell: number;
   /** 格间距（px） */
   gap: number;
+  /** 密度基准格边长（px），内容据此渲染再整体缩放 */
+  baseCell: number;
+  /** 密度基准格间距（px） */
+  baseGap: number;
   /** 当前屏宽（格），尺寸钳制上限 */
   maxCols: number;
   /** 显式列坐标（格），由打包引擎计算 */
@@ -80,6 +84,18 @@ const showName = computed(
 );
 
 const nameSize = computed(() => Math.min(15, Math.max(11, Math.round(props.cell * 0.15))));
+
+/**
+ * 框架级缩放：视口变窄导致 cell 被压缩（< baseCell）时，磁块内容不再依赖 cq 自适应，
+ * 而是按「基准格边长」的尺寸渲染，再整体 scale 缩小，避免小组件/图标因尺寸过小而裁切。
+ */
+const contentScale = computed(() => Math.min(1, props.cell / props.baseCell));
+const contentWidth = computed(
+  () => displayCols.value * props.baseCell + (displayCols.value - 1) * props.baseGap,
+);
+const contentHeight = computed(
+  () => displayRows.value * props.baseCell + (displayRows.value - 1) * props.baseGap,
+);
 
 /** 将任意尺寸吸附到合法尺寸（一边为 1 时另一边不超过 2） */
 function snapSize(cols: number, rows: number): { cols: number; rows: number } {
@@ -163,43 +179,52 @@ function activate() {
     :aria-label="app?.name ?? '小组件'"
     @click="activate"
   >
-    <div class="tile-flip" :class="{ 'tile-flipping': flipping }">
-      <TileFace
-        class="tile-face tile-front"
-        :app="app"
-        :widget="widget"
-        :full-icon="fullIcon"
-        :color="color"
-        :name="name"
-        :name-size="nameSize"
-        :is-library="isLibrary"
-        :is-settings="isSettings"
-        :is-library-live="isLibraryLive"
-        :show-live="showLive"
-        :show-name="showName"
-        :is-big="isBig"
-        :favicon-failed="faviconFailedId === tileId"
-        :component="definition?.component"
-        @favicon-failed="faviconFailedId = tileId"
-      />
-      <TileFace
-        class="tile-face tile-back"
-        :app="app"
-        :widget="widget"
-        :full-icon="fullIcon"
-        :color="color"
-        :name="name"
-        :name-size="nameSize"
-        :is-library="isLibrary"
-        :is-settings="isSettings"
-        :is-library-live="isLibraryLive"
-        :show-live="showLive"
-        :show-name="showName"
-        :is-big="isBig"
-        :favicon-failed="faviconFailedId === tileId"
-        :component="definition?.component"
-        @favicon-failed="faviconFailedId = tileId"
-      />
+    <div
+      class="tile-scale"
+      :style="{
+        width: `${contentWidth}px`,
+        height: `${contentHeight}px`,
+        transform: `scale(${contentScale})`,
+      }"
+    >
+      <div class="tile-flip" :class="{ 'tile-flipping': flipping }">
+        <TileFace
+          class="tile-face tile-front"
+          :app="app"
+          :widget="widget"
+          :full-icon="fullIcon"
+          :color="color"
+          :name="name"
+          :name-size="nameSize"
+          :is-library="isLibrary"
+          :is-settings="isSettings"
+          :is-library-live="isLibraryLive"
+          :show-live="showLive"
+          :show-name="showName"
+          :is-big="isBig"
+          :favicon-failed="faviconFailedId === tileId"
+          :component="definition?.component"
+          @favicon-failed="faviconFailedId = tileId"
+        />
+        <TileFace
+          class="tile-face tile-back"
+          :app="app"
+          :widget="widget"
+          :full-icon="fullIcon"
+          :color="color"
+          :name="name"
+          :name-size="nameSize"
+          :is-library="isLibrary"
+          :is-settings="isSettings"
+          :is-library-live="isLibraryLive"
+          :show-live="showLive"
+          :show-name="showName"
+          :is-big="isBig"
+          :favicon-failed="faviconFailedId === tileId"
+          :component="definition?.component"
+          @favicon-failed="faviconFailedId = tileId"
+        />
+      </div>
     </div>
 
     <span
@@ -261,6 +286,15 @@ function activate() {
   transition: none !important;
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.55);
   cursor: grabbing;
+}
+
+/* 框架级缩放层：内容按基准格边长（contentWidth/Height）渲染，再整体 scale 缩小到实际磁块。
+   scale 由内联样式给出；transform-origin 固定左上角，保证与磁块定位对齐。 */
+.tile-scale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
 }
 
 /* 卡片翻转容器：占据磁块全幅，透视用 transform 内联表达，避免把 perspective 加到

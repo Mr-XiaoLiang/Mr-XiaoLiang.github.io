@@ -11,6 +11,10 @@ export interface LayoutMetrics {
   paddingX: number;
   /** 单屏横向格数（格），严格取配置值，不随视口宽度变化 */
   screenWidth: number;
+  /** 密度基准格边长（视口未压缩时的目标值），用于磁块内容的框架级缩放 */
+  baseCell: number;
+  /** 密度基准磁贴间隙（px） */
+  baseGap: number;
 }
 
 export interface LayoutInput {
@@ -37,7 +41,8 @@ export interface LayoutInput {
  * 磁贴间隙约为格边长的 1/32（≈3%），是紧贴的细缝；
  * 屏间距约为格边长的 1/3（≈33%），是磁贴间隙的约 10 倍，桌面端屏与屏之间一眼可分。
  */
-const CELL_SIZE: Record<Density, number> = {
+/** 密度基准格边长（px），供磁块内容做框架级缩放时参考 */
+export const CELL_SIZE: Record<Density, number> = {
   loose: 108,
   regular: 88,
   compact: 72,
@@ -85,10 +90,11 @@ export function computeLayout(input: LayoutInput): LayoutMetrics {
   const cell = Math.max(MIN_CELL, Math.min(baseCell, Math.floor(maxCellByWidth)));
 
   const gap = Math.round(cell * GUTTER_RATIO);
+  const baseGap = Math.round(baseCell * GUTTER_RATIO);
   const screenGap = Math.round(cell * SCREEN_GAP_RATIO);
   const paddingX = screenGap;
 
-  return { cell, gap, screenGap, paddingX, screenWidth };
+  return { cell, gap, screenGap, paddingX, screenWidth, baseCell, baseGap };
 }
 
 /** 屏的像素宽度 */

@@ -14,6 +14,10 @@ const props = defineProps<{
   cell: number;
   /** 格间距（px） */
   gap: number;
+  /** 密度基准格边长（px），磁块内容据此做框架级缩放 */
+  baseCell: number;
+  /** 密度基准格间距（px） */
+  baseGap: number;
   /** 屏宽（格） */
   maxCols: number;
   /** 是否为最后一屏（新屏瓦片只在末屏显示） */
@@ -137,6 +141,8 @@ function onTileResize(id: string, cols: number, rows: number) {
         :widget="entry.tile.kind === 'widget' ? entry.tile.widget : undefined"
         :cell="cell"
         :gap="gap"
+        :base-cell="baseCell"
+        :base-gap="baseGap"
         :max-cols="maxCols"
         :col="entry.pos.col"
         :row="entry.pos.row"

@@ -132,6 +132,8 @@ onBeforeUnmount(() => {
           :tiles="store.tilesOnScreen(screen)"
           :cell="metrics.cell"
           :gap="metrics.gap"
+          :base-cell="metrics.baseCell"
+          :base-gap="metrics.baseGap"
           :max-cols="metrics.screenWidth"
           :is-last="screen === screens.length - 1"
           :style="{ width: `${screenWidth}px` }"
