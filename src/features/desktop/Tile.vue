@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { getWidgetDefinition } from '../../widgets';
-import FaviconImage from './FaviconImage.vue';
-import LibraryLiveTile from './LibraryLiveTile.vue';
+import TileFace from './TileFace.vue';
 import { useEditMode } from './editState';
 import { tileColorFor } from '../../core/theme';
 import { LIBRARY_TILE_ID, isValidTileSize, MAX_TILE_SPAN, SETTINGS_TILE_ID, type AppItem, type WidgetItem } from '../../core/types';
@@ -33,6 +32,11 @@ const { editing } = useEditMode();
 
 /** favicon 全部候选失败的磁块 id，降级为首字色块 */
 const faviconFailedId = ref('');
+
+/** 跳转前卡片翻转动画时长（与 CSS 中 .tile-flip 的 transition 时长保持一致） */
+const FLIP_MS = 350;
+/** 是否正在翻转（翻转期间拒绝重复触发） */
+const flipping = ref(false);
 
 const isLibrary = computed(() => props.app?.id === LIBRARY_TILE_ID);
 const isSettings = computed(() => props.app?.id === SETTINGS_TILE_ID);
@@ -132,7 +136,15 @@ function activate() {
     return;
   }
   const url = props.widget ? (props.widget.props.url as string | undefined) : props.app?.url;
-  if (url) window.open(url, '_blank', 'noopener');
+  if (!url || flipping.value) return;
+  // 点击跳转：先做一次卡片翻转（翻过去仍是当前图标），翻转到位后再打开目标网址，随后翻转回正面
+  flipping.value = true;
+  window.setTimeout(() => {
+    window.open(url, '_blank', 'noopener');
+    window.setTimeout(() => {
+      flipping.value = false;
+    }, FLIP_MS);
+  }, FLIP_MS);
 }
 </script>
 
@@ -151,44 +163,44 @@ function activate() {
     :aria-label="app?.name ?? '小组件'"
     @click="activate"
   >
-    <img v-if="fullIcon" class="tile-full" :src="fullIcon" :alt="app?.name ?? ''" draggable="false" />
-    <template v-else>
-      <LibraryLiveTile v-if="isLibraryLive" class="tile-live" :tile-color="color" />
-      <component
-        :is="definition?.component"
-        v-else-if="showLive && widget"
-        v-bind="widget.props"
-        class="tile-live"
+    <div class="tile-flip" :class="{ 'tile-flipping': flipping }">
+      <TileFace
+        class="tile-face tile-front"
+        :app="app"
+        :widget="widget"
+        :full-icon="fullIcon"
+        :color="color"
+        :name="name"
+        :name-size="nameSize"
+        :is-library="isLibrary"
+        :is-settings="isSettings"
+        :is-library-live="isLibraryLive"
+        :show-live="showLive"
+        :show-name="showName"
+        :is-big="isBig"
+        :favicon-failed="faviconFailedId === tileId"
+        :component="definition?.component"
+        @favicon-failed="faviconFailedId = tileId"
       />
-      <div v-else class="tile-icon" :class="{ 'tile-icon-center': !isBig }">
-        <svg v-if="isLibrary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-          <rect x="3.5" y="3.5" width="7" height="7" fill="currentColor" stroke="none" />
-          <rect x="14.25" y="4.25" width="5.5" height="5.5" />
-          <rect x="4.25" y="14.25" width="5.5" height="5.5" />
-          <rect x="13.5" y="13.5" width="7" height="7" fill="currentColor" stroke="none" />
-        </svg>
-        <svg
-          v-else-if="isSettings"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.2 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-          />
-        </svg>
-        <img v-else-if="app?.icon" :src="app.icon" :alt="app?.name ?? ''" draggable="false" />
-        <FaviconImage
-          v-else-if="app?.url && faviconFailedId !== tileId"
-          :url="app.url"
-          :alt="app?.name ?? ''"
-          @failed="faviconFailedId = tileId"
-        />
-        <span v-else class="tile-initial">{{ (app?.name ?? name ?? '?').trim().charAt(0).toUpperCase() }}</span>
-      </div>
-    </template>
-
-    <span v-if="showName" class="tile-name" :style="{ fontSize: `${nameSize}px` }">{{ name }}</span>
+      <TileFace
+        class="tile-face tile-back"
+        :app="app"
+        :widget="widget"
+        :full-icon="fullIcon"
+        :color="color"
+        :name="name"
+        :name-size="nameSize"
+        :is-library="isLibrary"
+        :is-settings="isSettings"
+        :is-library-live="isLibraryLive"
+        :show-live="showLive"
+        :show-name="showName"
+        :is-big="isBig"
+        :favicon-failed="faviconFailedId === tileId"
+        :component="definition?.component"
+        @favicon-failed="faviconFailedId = tileId"
+      />
+    </div>
 
     <span
       v-if="editing && !isLibrary"
@@ -236,9 +248,8 @@ function activate() {
   touch-action: none;
 }
 
-/* 编辑态拦截小组件实时内容与图标的鼠标操作：仅保留拖拽、调尺寸、取消固定等编辑手势 */
-.tile-editing .tile-live,
-.tile-editing .tile-icon {
+/* 编辑态拦截磁块内容的鼠标操作：仅保留拖拽、调尺寸、取消固定等编辑手势 */
+.tile-editing .tile-flip {
   pointer-events: none;
 }
 
@@ -252,68 +263,29 @@ function activate() {
   cursor: grabbing;
 }
 
-.tile-full {
+/* 卡片翻转容器：占据磁块全幅，透视用 transform 内联表达，避免把 perspective 加到
+   .tile 上令其建立 stacking context 而把手柄的 z-index 困在磁贴内部 */
+.tile-flip {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  transform-style: preserve-3d;
+  transform: perspective(900px) rotateY(0deg);
+  transition: transform 0.35s ease;
 }
 
-.tile-live {
+.tile-flip.tile-flipping {
+  transform: perspective(900px) rotateY(180deg);
+}
+
+.tile-face {
   position: absolute;
   inset: 0;
-  /* 强制裁剪：小组件协议禁止内部滚动，任何溢出内容被裁掉而非形成可滚动区域，
-     以免抢占用户对桌面页面的滚动手势 */
-  overflow: hidden;
-  /* 小组件容器查询基准放在这里，避免 .tile 因 container-type 建立 stacking context
-     而把手柄的 z-index 困在磁贴内部（导致悬浮手柄被相邻磁贴压住） */
-  container-type: size;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.tile-icon {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 12%;
-}
-
-.tile-icon-center {
-  align-items: center;
-  justify-content: center;
-  padding: 18%;
-}
-
-.tile-icon img,
-.tile-icon svg {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-}
-
-.tile-initial {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  font-weight: 600;
-  font-size: 140%;
-}
-
-.tile-name {
-  position: absolute;
-  left: 7%;
-  bottom: 5%;
-  max-width: 86%;
-  overflow: hidden;
-  font-weight: 600;
-  line-height: 1.2;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-shadow: 0 1px 4px rgb(0 0 0 / 0.55);
+.tile-back {
+  transform: rotateY(180deg);
 }
 
 .tile-remove {
