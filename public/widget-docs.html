@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>小组件接入说明 · MrUserPage</title>
+    <style>
+      :root {
+        --flat-bg: #000;
+        --flat-text: #fff;
+        --flat-secondary: rgb(255 255 255 / 0.62);
+        --flat-tertiary: rgb(255 255 255 / 0.36);
+        --flat-border: rgb(255 255 255 / 0.22);
+        --flat-hover: rgb(255 255 255 / 0.07);
+        --accent: #1ba1e2;
+        --danger: #e51400;
+        --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--flat-bg);
+        color: var(--flat-text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+          'Microsoft YaHei', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.65;
+      }
+
+      .page {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 48px 24px 96px;
+      }
+
+      header.top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--flat-border);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-weight: 300;
+        letter-spacing: 0.01em;
+      }
+
+      .subtitle {
+        margin: 8px 0 0;
+        color: var(--flat-secondary);
+        font-size: 14px;
+      }
+
+      .copy-btn {
+        flex: 0 0 auto;
+        padding: 9px 20px;
+        border: 2px solid var(--accent);
+        background: none;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .copy-btn:hover {
+        background: var(--flat-hover);
+      }
+
+      .copy-btn.done {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      section {
+        margin-top: 44px;
+      }
+
+      h2 {
+        margin: 0 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--flat-border);
+        font-size: 24px;
+        font-weight: 300;
+      }
+
+      h3 {
+        margin: 24px 0 8px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      p {
+        margin: 8px 0;
+        color: var(--flat-secondary);
+        font-size: 15px;
+      }
+
+      ul,
+      ol {
+        margin: 8px 0;
+        padding-left: 22px;
+        color: var(--flat-secondary);
+        font-size: 15px;
+      }
+
+      li {
+        margin: 6px 0;
+      }
+
+      strong {
+        color: var(--flat-text);
+        font-weight: 600;
+      }
+
+      code {
+        padding: 1px 6px;
+        border: 1px solid var(--flat-border);
+        background: var(--flat-hover);
+        color: var(--flat-text);
+        font-family: var(--mono);
+        font-size: 13px;
+      }
+
+      pre {
+        margin: 12px 0;
+        padding: 16px;
+        border: 1px solid var(--flat-border);
+        background: var(--flat-hover);
+        overflow-x: auto;
+      }
+
+      pre code {
+        padding: 0;
+        border: none;
+        background: none;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      table {
+        width: 100%;
+        margin: 12px 0;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border: 1px solid var(--flat-border);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--flat-hover);
+        color: var(--flat-text);
+        font-weight: 600;
+      }
+
+      td {
+        color: var(--flat-secondary);
+      }
+
+      td code {
+        white-space: nowrap;
+      }
+
+      .note {
+        margin: 12px 0;
+        padding: 12px 16px;
+        border-left: 3px solid var(--accent);
+        background: var(--flat-hover);
+        color: var(--flat-text);
+        font-size: 14px;
+      }
+
+      .warn {
+        border-left-color: var(--danger);
+      }
+
+      footer {
+        margin-top: 56px;
+        padding-top: 24px;
+        border-top: 1px solid var(--flat-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: var(--flat-tertiary);
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <div>
+          <h1>小组件接入说明</h1>
+          <p class="subtitle">把一份制作完成的小组件打包为 zip，即可导入 MrUserPage 桌面。本文档同时面向人与 AI，可直接复制本页链接发给 AI 学习，由其代为编写小组件。</p>
+        </div>
+        <button class="copy-btn" type="button" onclick="copyLink(this)">复制本页链接</button>
+      </header>
+
+      <section>
+        <h2>一、小组件是什么</h2>
+        <p>
+          小组件是渲染在桌面磁块内部的一段可交互内容（例如时钟、搜索框、月历）。每个小组件由一份
+          <code>manifest.json</code>（声明元数据与尺寸约束）与一份入口代码文件
+          <code>index.js</code>（导出一个 Vue 组件）组成，二者遵循同一份协议。小组件与框架解耦：
+          框架只认这两份文件，小组件内部如何实现由作者自行决定，但不得越过下文列出的硬性边界。
+        </p>
+      </section>
+
+      <section>
+        <h2>二、压缩包结构</h2>
+        <p>把以下内容打包为 <code>.zip</code>（文件可放在压缩包根目录，也可统一放在一个顶层目录内，例如直接压缩小组件文件夹）：</p>
+        <pre><code>my-widget.zip
+├── manifest.json     必填：协议入口，声明元数据与尺寸约束
+├── index.js          必填：入口代码文件，默认导出一个小组件模块
+└── 其他资源           可选：图片、数据等，运行时通过 assets() 读取</code></pre>
+        <ul>
+          <li>入口文件固定命名为 <code>index.js</code> 或 <code>index.mjs</code>，二者命中其一即可。</li>
+          <li>入口文件必须是<strong>单个自包含的 ES 模块</strong>，不得使用相对导入（如 <code>import './util.js'</code>）。</li>
+          <li>需要打包的资源（图片、JSON 等）通过运行时 <code>assets()</code> 按相对路径读取，详见下文。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>三、manifest.json 协议字段</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>字段</th>
+              <th>类型</th>
+              <th>必填</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>protocol</code></td>
+              <td>number</td>
+              <td>是</td>
+              <td>协议版本，当前必须为 <code>1</code>。</td>
+            </tr>
+            <tr>
+              <td><code>id</code></td>
+              <td>string</td>
+              <td>是</td>
+              <td>全局唯一标识，只能由小写字母、数字、点、下划线、连字符组成，且以字母或数字开头。与内置及既有小组件冲突时导入失败。</td>
+            </tr>
+            <tr>
+              <td><code>name</code></td>
+              <td>string</td>
+              <td>是</td>
+              <td>显示名称，展示在应用库小组件列表中。</td>
+            </tr>
+            <tr>
+              <td><code>description</code></td>
+              <td>string</td>
+              <td>是</td>
+              <td>一句话说明，展示在应用库小组件卡片中。</td>
+            </tr>
+            <tr>
+              <td><code>minSize</code></td>
+              <td>{ cols, rows }</td>
+              <td>是</td>
+              <td>最小尺寸（格），作为尺寸下限；<code>cols</code>/<code>rows</code> 均为 1–8 的整数。</td>
+            </tr>
+            <tr>
+              <td><code>defaultSize</code></td>
+              <td>{ cols, rows }</td>
+              <td>是</td>
+              <td>默认尺寸，不得小于 <code>minSize</code>。</td>
+            </tr>
+            <tr>
+              <td><code>quickSizes</code></td>
+              <td>{ cols, rows }[]</td>
+              <td>否</td>
+              <td>应用库中提供的可选尺寸列表，每一项不得小于 <code>minSize</code>；缺省时仅提供默认尺寸。</td>
+            </tr>
+            <tr>
+              <td><code>hideTileName</code></td>
+              <td>boolean</td>
+              <td>否</td>
+              <td>为 <code>true</code> 时隐藏磁块左下角的名称，默认为 <code>false</code>。</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note">
+          <strong>尺寸上限恒由框架统一钳制为 8 格</strong>：manifest 只能声明最小尺寸（下限），
+          不得声明「上限」字段。超出 8 格或小于 1 格的值在导入校验时会被拒绝。
+        </div>
+      </section>
+
+      <section>
+        <h2>四、入口文件 index.js</h2>
+        <p>入口文件是一个 ES 模块，<strong>默认导出小组件模块</strong>。框架兼容以下三种导出形态：</p>
+        <ul>
+          <li><code>export default { component }</code> —— 默认导出 <code>WidgetModule</code>（推荐）。</li>
+          <li><code>export { component }</code> —— 命名导出组件。</li>
+          <li><code>export default Component</code> —— 默认导出组件本身。</li>
+        </ul>
+        <p><code>WidgetModule</code> 的结构：</p>
+        <pre><code>{
+  component: 组件,                    // 必填：用于渲染的 Vue 组件
+  defaultProps: { ... },             // 选填：实例默认参数，作为组件 props 传入
+}</code></pre>
+        <div class="note warn">
+          <strong>组件必须从运行时获取 Vue，不得 <code>import</code> 'vue'</strong>。入口模块通过全局
+          <code>globalThis.MrUserPageWidget.vue</code> 获取与框架同源的 Vue 运行时，直接
+          <code>import 'vue'</code> 会引入第二份 Vue 实例，导致响应式失效。运行时接口详见第五节。
+        </div>
+      </section>
+
+      <section>
+        <h2>五、运行时接口 MrUserPageWidget</h2>
+        <p>应用启动时把以下对象挂到全局 <code>MrUserPageWidget</code>：</p>
+        <h3>5.1 视图层 <code>MrUserPageWidget.vue</code></h3>
+        <p>提供与框架同源的 Vue 运行时 API：</p>
+        <pre><code>h, ref, computed, reactive, watch, watchEffect,
+onMounted, onBeforeUnmount, nextTick, defineComponent</code></pre>
+        <h3>5.2 资源解析 <code>MrUserPageWidget.assets()</code></h3>
+        <p>返回压缩包资源的解析器，<strong>必须在入口模块顶层作用域调用一次</strong>（它会捕获当前压缩包的文件表）：</p>
+        <pre><code>const assets = globalThis.MrUserPageWidget.assets();
+
+assets.url('icon.png');   // 返回资源的对象地址（object URL），可用于 &lt;img&gt; 或 fetch
+await assets.text('data.json'); // 以 UTF-8 文本读取资源内容</code></pre>
+      </section>
+
+      <section>
+        <h2>六、开发约束（硬性边界）</h2>
+        <ol>
+          <li><strong>尺寸上限</strong>：全局硬上限为 8 格，任何小组件不得突破；<code>minSize</code> 只作下限。</li>
+          <li><strong>禁止内部滚动</strong>：小组件被装入固定尺寸的磁块容器，容器强制 <code>overflow: hidden</code>；组件自身不得制造可滚动区域，以免抢占用户对桌面的滚动手势。请让内容自适应容器，溢出部分会被裁掉。</li>
+          <li><strong>根元素铺满容器</strong>：组件的根元素应设 <code>width: 100%; height: 100%</code>，以便充满磁块。</li>
+          <li><strong>允许联网</strong>：可通过 <code>fetch</code> 请求 API，但仅限静态代码逻辑；框架不提供服务端，也不做数据持久化中转。</li>
+          <li><strong>单文件入口</strong>：入口文件不得使用相对导入；跨文件复用能力请合并进单个 <code>index.js</code>。</li>
+          <li><strong>尺寸自适应</strong>：磁块容器已启用容器查询（<code>container-type: size</code>），可在样式中使用 <code>cqw</code>/<code>cqh</code> 单位按容器宽高缩放字号。</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>七、设计风格建议</h2>
+        <p>本项目遵循 Windows 8 / Windows Phone Metro 视觉语言，小组件应保持一致：</p>
+        <ol>
+          <li><strong>直角、无圆角</strong>：所有色块、按钮、边框一律 <code>border-radius: 0</code>，禁止胶囊、椭圆。</li>
+          <li><strong>扁平纯色、无质感</strong>：纯色块填充，禁止渐变、阴影、模糊、玻璃拟态。</li>
+          <li><strong>高对比、不透明文字</strong>：最小字号 11px 且必须不透明，禁止靠降低透明度弱化内容。</li>
+          <li><strong>单一强调色</strong>：只使用 <code>--accent</code>（#1ba1e2）作选中、焦点与主操作，不多色堆砌。</li>
+          <li><strong>字号阶梯</strong>：大字号用轻字重，正文 15px、说明 12px，强调用加粗而非更大字号。</li>
+          <li><strong>克制动效</strong>：入场 250ms ease-out、退场 167ms ease-in，其余交互避免多余动画。</li>
+        </ol>
+        <h3>可用 CSS 变量（自动适配明暗主题）</h3>
+        <p>组件渲染在应用 DOM 内，可直接引用以下变量，随主题自动切换：</p>
+        <table>
+          <thead>
+            <tr>
+              <th>变量</th>
+              <th>用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>--flat-text</code></td><td>主文字色</td></tr>
+            <tr><td><code>--flat-secondary</code></td><td>次级文字色</td></tr>
+            <tr><td><code>--flat-tertiary</code></td><td>弱化说明文字色</td></tr>
+            <tr><td><code>--flat-border</code></td><td>描边 / 分隔线</td></tr>
+            <tr><td><code>--flat-hover</code></td><td>悬停 / 底色</td></tr>
+            <tr><td><code>--accent</code></td><td>强调色（#1ba1e2）</td></tr>
+            <tr><td><code>--danger</code></td><td>危险 / 错误（#e51400）</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>八、完整示例</h2>
+        <p>一个可点击累加的「计数器」小组件。</p>
+        <h3>manifest.json</h3>
+        <pre><code>{
+  "protocol": 1,
+  "id": "my-counter",
+  "name": "计数器",
+  "description": "点击累加的计数器",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 2, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 3 }
+  ]
+}</code></pre>
+        <h3>index.js</h3>
+        <pre><code>const { h, ref } = globalThis.MrUserPageWidget.vue;
+const assets = globalThis.MrUserPageWidget.assets();
+
+export default {
+  component: {
+    setup() {
+      const count = ref(0);
+      return () =>
+        h('div', {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            width: '100%',
+            height: '100%',
+            padding: '12px',
+            boxSizing: 'border-box',
+            color: 'var(--flat-text)',
+          },
+        }, [
+          h('span', {
+            style: { fontSize: 'clamp(18px, 12cqw, 48px)', fontWeight: 700 },
+          }, String(count.value)),
+          h('button', {
+            onClick: () => { count.value += 1; },
+            style: {
+              border: 'none',
+              background: 'var(--accent)',
+              color: '#fff',
+              padding: '6px 18px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            },
+          }, '计数 +1'),
+        ]);
+    },
+  },
+};</code></pre>
+        <p>将上述两个文件放入同一目录并压缩为 <code>.zip</code>（文件位于压缩包根目录），即可在桌面「应用库 → 小组件 → 自定义小组件 → 导入小组件」中导入。</p>
+      </section>
+
+      <footer>
+        <span>MrUserPage 小组件协议 · 版本 1</span>
+        <button class="copy-btn" type="button" onclick="copyLink(this)">复制本页链接</button>
+      </footer>
+    </div>
+
+    <script>
+      async function copyLink(button) {
+        const url = location.href;
+        let ok = false;
+        try {
+          await navigator.clipboard.writeText(url);
+          ok = true;
+        } catch (e) {
+          try {
+            const textarea = document.createElement('textarea');
+            textarea.value = url;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            ok = document.execCommand('copy');
+            textarea.remove();
+          } catch (e2) {
+            ok = false;
+          }
+        }
+        if (ok && button) {
+          const original = button.textContent;
+          button.textContent = '已复制';
+          button.classList.add('done');
+          window.setTimeout(() => {
+            button.textContent = original;
+            button.classList.remove('done');
+          }, 2000);
+        }
+      }
+    </script>
+  </body>
+</html>

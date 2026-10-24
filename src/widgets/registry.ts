@@ -30,6 +30,8 @@ export interface WidgetDefinition {
   defaultSize: WidgetSize;
   quickSizes: WidgetSize[];
   hideTileName: boolean;
+  /** 实例默认参数，添加小组件实例时若未显式提供 props 则使用 */
+  defaultProps?: Record<string, unknown>;
   source: WidgetSource;
 }
 
@@ -51,6 +53,7 @@ function toDefinition(id: string, entry: RegistryEntry, source: WidgetSource): W
     defaultSize: entry.manifest.defaultSize,
     quickSizes: entry.manifest.quickSizes,
     hideTileName: entry.manifest.hideTileName,
+    defaultProps: entry.module.defaultProps,
     source,
   };
 }

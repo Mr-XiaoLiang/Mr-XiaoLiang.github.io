@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { getWidgetDefinition } from '../../widgets';
 import FaviconImage from './FaviconImage.vue';
+import LibraryLiveTile from './LibraryLiveTile.vue';
 import { useEditMode } from './editState';
 import { tileColorFor } from '../../core/theme';
 import { LIBRARY_TILE_ID, isValidTileSize, MAX_TILE_SPAN, SETTINGS_TILE_ID, type AppItem, type WidgetItem } from '../../core/types';
@@ -68,7 +69,11 @@ const fullIcon = computed(() => props.app?.fullIcon ?? '');
 const isBig = computed(() => displayCols.value >= 2 && displayRows.value >= 2);
 /** 小组件只要列宽足够即渲染实时内容（高度 1 也显示，不再回退为问号） */
 const showLive = computed(() => isWidget.value && displayCols.value >= 2);
-const showName = computed(() => isBig.value && !definition.value?.hideTileName && !showLive.value);
+/** 应用库磁块放大到 2×2 及以上时，以 3×3 翻转方块 live tile 替代静态图标 */
+const isLibraryLive = computed(() => isLibrary.value && isBig.value);
+const showName = computed(
+  () => isBig.value && !definition.value?.hideTileName && !showLive.value && !isLibraryLive.value,
+);
 
 const nameSize = computed(() => Math.min(15, Math.max(11, Math.round(props.cell * 0.15))));
 
@@ -116,8 +121,8 @@ function onResizeDown(event: PointerEvent) {
 }
 
 function activate() {
-  // 编辑态下系统磁块（应用库、设置）仍可点按，应用与小组件磁块交由徽标和手柄操作
-  if (editing.value && !isLibrary.value && !isSettings.value) return;
+  // 编辑态下拦截所有磁块点击，仅保留拖拽、调尺寸、取消固定等编辑操作
+  if (editing.value) return;
   if (isLibrary.value) {
     emit('open-library');
     return;
@@ -148,13 +153,19 @@ function activate() {
   >
     <img v-if="fullIcon" class="tile-full" :src="fullIcon" :alt="app?.name ?? ''" draggable="false" />
     <template v-else>
-      <component :is="definition?.component" v-if="showLive && widget" v-bind="widget.props" class="tile-live" />
+      <LibraryLiveTile v-if="isLibraryLive" class="tile-live" :tile-color="color" />
+      <component
+        :is="definition?.component"
+        v-else-if="showLive && widget"
+        v-bind="widget.props"
+        class="tile-live"
+      />
       <div v-else class="tile-icon" :class="{ 'tile-icon-center': !isBig }">
-        <svg v-if="isLibrary" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <rect x="3" y="3" width="8" height="8" />
-          <rect x="13" y="3" width="8" height="8" opacity="0.55" />
-          <rect x="3" y="13" width="8" height="8" opacity="0.55" />
-          <rect x="13" y="13" width="8" height="8" />
+        <svg v-if="isLibrary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="7" height="7" fill="currentColor" stroke="none" />
+          <rect x="14.25" y="4.25" width="5.5" height="5.5" />
+          <rect x="4.25" y="14.25" width="5.5" height="5.5" />
+          <rect x="13.5" y="13.5" width="7" height="7" fill="currentColor" stroke="none" />
         </svg>
         <svg
           v-else-if="isSettings"
@@ -223,6 +234,12 @@ function activate() {
   outline-offset: -2px;
   /* 编辑态下磁块自身可拖拽，禁用触摸滚动接管，保证跟手 */
   touch-action: none;
+}
+
+/* 编辑态拦截小组件实时内容与图标的鼠标操作：仅保留拖拽、调尺寸、取消固定等编辑手势 */
+.tile-editing .tile-live,
+.tile-editing .tile-icon {
+  pointer-events: none;
 }
 
 .tile-dragging {

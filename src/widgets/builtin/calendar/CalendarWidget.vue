@@ -6,7 +6,8 @@ const view = ref({ year: today.getFullYear(), month: today.getMonth() });
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 
-const title = computed(() => `${view.value.year}年${view.value.month + 1}月`);
+const monthLabel = computed(() => `${view.value.month + 1}月`);
+const yearLabel = computed(() => `${view.value.year}年`);
 
 const cells = computed<(number | null)[]>(() => {
   const { year, month } = view.value;
@@ -30,7 +31,10 @@ function isToday(day: number | null): boolean {
 
 <template>
   <div class="calendar-widget">
-    <span class="calendar-title">{{ title }}</span>
+    <div class="calendar-title">
+      <span class="calendar-month">{{ monthLabel }}</span>
+      <span class="calendar-year">{{ yearLabel }}</span>
+    </div>
     <div class="calendar-grid">
       <span v-for="name in WEEKDAYS" :key="name" class="calendar-weekday">{{ name }}</span>
       <span
@@ -56,10 +60,25 @@ function isToday(day: number | null): boolean {
   overflow: hidden;
 }
 
+/* 标题：月份为视觉重心（大、醒目），年份为次要信息（小、弱），基线对齐 */
 .calendar-title {
-  color: rgb(255 255 255 / 0.85);
-  font-size: clamp(10px, 7cqh, 18px);
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  color: #fff;
+}
+
+.calendar-month {
+  font-size: clamp(16px, 13cqh, 30px);
   font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.calendar-year {
+  color: rgb(255 255 255 / 0.72);
+  font-size: clamp(11px, 6cqh, 15px);
+  font-weight: 400;
 }
 
 .calendar-grid {
@@ -74,8 +93,9 @@ function isToday(day: number | null): boolean {
 .calendar-weekday {
   display: grid;
   place-items: center;
-  color: rgb(255 255 255 / 0.65);
-  font-size: clamp(8px, 5cqh, 13px);
+  color: rgb(255 255 255 / 0.72);
+  font-size: clamp(11px, 5cqh, 13px);
+  font-weight: 400;
 }
 
 .calendar-day {
@@ -83,7 +103,7 @@ function isToday(day: number | null): boolean {
   place-items: center;
   min-height: 0;
   color: #fff;
-  font-size: clamp(8px, 5.5cqh, 14px);
+  font-size: clamp(11px, 5.5cqh, 14px);
   font-variant-numeric: tabular-nums;
 }
 
@@ -91,10 +111,11 @@ function isToday(day: number | null): boolean {
   visibility: hidden;
 }
 
+/* 今日：直角纯白块 + 深色文字，高对比、扁平（Metro 无圆角） */
 .calendar-day.today {
-  border-radius: 6px;
-  background: rgb(255 255 255 / 0.92);
+  border-radius: 0;
+  background: #fff;
   color: #1b1e26;
-  font-weight: 700;
+  font-weight: 600;
 }
 </style>

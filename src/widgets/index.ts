@@ -7,9 +7,11 @@
 
 export * from './protocol';
 export * from './registry';
-export { loadUserWidget } from './loader';
+export { loadUserWidgetFromZip } from './loader';
 
 import { installBuiltinWidgets } from './builtin';
+import { installWidgetRuntime } from './runtime';
 
-// 模块首次加载即注册内置小组件（ES 模块副作用仅执行一次）
+// 模块首次加载即挂载运行时与注册内置小组件（ES 模块副作用仅执行一次）
+installWidgetRuntime();
 installBuiltinWidgets();

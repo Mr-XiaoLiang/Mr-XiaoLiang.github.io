@@ -4,6 +4,7 @@ import { useConfigStore } from '../../stores/config';
 import { fetchPresetWidgets, type PresetWidget } from '../../core/presets';
 import { listWidgets, sizeLabel } from '../../widgets';
 import { tileColorFor } from '../../core/theme';
+import { useWidgetDocs } from '../../composables/useWidgetDocs';
 import FaviconImage from '../desktop/FaviconImage.vue';
 import LetterJump from './LetterJump.vue';
 import { LIBRARY_TILE_ID, SETTINGS_TILE_ID, type AppItem, type WidgetSize } from '../../core/types';
@@ -21,6 +22,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useConfigStore();
+const { docsUrl, copied, copyDocsLink } = useWidgetDocs();
 
 const tab = ref<'apps' | 'widgets'>('apps');
 const query = ref('');
@@ -317,7 +319,7 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="card-add"
-              @click="addWidget(definition.id, widgetSizeOf(definition.id, definition.defaultSize), {})"
+              @click="addWidget(definition.id, widgetSizeOf(definition.id, definition.defaultSize), definition.defaultProps ?? {})"
             >
               添加
             </button>
@@ -350,7 +352,11 @@ onBeforeUnmount(() => {
       <section class="lib-group">
         <div class="lib-group-head">
           <h3 class="lib-group-title">自定义小组件</h3>
-          <button type="button" class="row-pin" @click="emit('add-custom-widget')">添加小组件</button>
+          <div class="lib-group-actions">
+            <button type="button" class="link-btn" @click="copyDocsLink">{{ copied ? '已复制' : '复制说明页链接' }}</button>
+            <a class="link-btn" :href="docsUrl" target="_blank" rel="noopener">接入说明</a>
+            <button type="button" class="row-pin" @click="emit('add-custom-widget')">导入小组件</button>
+          </div>
         </div>
         <div v-if="userWidgets.length" class="widget-grid">
           <article v-for="definition in userWidgets" :key="definition.id" class="widget-card">
@@ -372,7 +378,7 @@ onBeforeUnmount(() => {
               <button
                 type="button"
                 class="card-add"
-                @click="addWidget(definition.id, widgetSizeOf(definition.id, definition.defaultSize), {})"
+                @click="addWidget(definition.id, widgetSizeOf(definition.id, definition.defaultSize), definition.defaultProps ?? {})"
               >
                 添加
               </button>
@@ -698,6 +704,30 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lib-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-btn {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
 }
 
 .card-actions {

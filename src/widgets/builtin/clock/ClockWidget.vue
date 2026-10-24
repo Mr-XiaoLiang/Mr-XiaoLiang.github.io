@@ -36,28 +36,37 @@ function pad(value: number): string {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-evenly;
-  gap: 4%;
+  justify-content: center;
+  gap: 2%;
   width: 100%;
   height: 100%;
-  padding: 8%;
+  padding: 6%;
   box-sizing: border-box;
   overflow: hidden;
 }
 
-/* 字号同时受高度与宽度约束，窄高磁贴（如 2x3）不溢出 */
+/* Metro 时钟：细体大数字、扁平纯色、无阴影。
+   时间以「占满高度」和「撑满宽度」同时约束（88cqh 上限 / 32cqw 按 5 字符估算），
+   让 HH:MM 尽量铺满磁贴，而非小字居中留白。 */
 .clock-time {
-  font-weight: 700;
-  font-size: clamp(18px, min(26cqh, 30cqw), 64px);
+  font-weight: 300;
+  font-size: clamp(24px, min(88cqh, 32cqw), 160px);
   font-variant-numeric: tabular-nums;
-  line-height: 1.05;
-  letter-spacing: 0.02em;
-  text-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .clock-date {
-  color: rgb(255 255 255 / 0.85);
-  font-size: clamp(10px, min(8cqh, 9cqw), 18px);
+  color: rgb(255 255 255 / 0.72);
+  font-size: clamp(11px, min(8cqh, 9cqw), 18px);
   white-space: nowrap;
+}
+
+/* 横条形态（1 行高）只留时间，隐藏日期 */
+@container (max-height: 130px) {
+  .clock-date {
+    display: none;
+  }
 }
 </style>
