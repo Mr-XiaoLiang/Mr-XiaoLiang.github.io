@@ -10,9 +10,20 @@ const triggerRef = ref<HTMLElement | null>(null);
 const popupStyle = ref<{ left: string; top: string }>({ left: '0px', top: '0px' });
 
 const engine = computed(() => store.config?.searchEngine ?? 'bing');
-const engineName = computed(
-  () => SEARCH_ENGINES.find((e) => e.id === engine.value)?.name ?? '搜索引擎',
-);
+const engineDef = computed(() => SEARCH_ENGINES.find((e) => e.id === engine.value) ?? SEARCH_ENGINES[0]);
+const engineName = computed(() => engineDef.value.name);
+
+/** favicon 加载成功时隐藏首字母文字，只显示 logo */
+function onIconLoaded(event: Event) {
+  const badge = (event.currentTarget as HTMLImageElement).parentElement;
+  const letter = badge?.querySelector('.engine-letter') as HTMLElement | null;
+  if (letter) letter.style.display = 'none';
+}
+
+/** favicon 加载失败时隐藏自身，露出首字母文字 */
+function onIconError(event: Event) {
+  (event.target as HTMLImageElement).style.display = 'none';
+}
 
 function submit() {
   const keyword = query.value.trim();
@@ -30,8 +41,8 @@ function selectEngine(id: string) {
 function openEnginePicker() {
   if (triggerRef.value) {
     const r = triggerRef.value.getBoundingClientRect();
-    const left = Math.min(r.left, window.innerWidth - 160);
-    popupStyle.value = { left: `${Math.max(8, left)}px`, top: `${r.bottom + 4}px` };
+    const left = Math.min(r.left, window.innerWidth - 180);
+    popupStyle.value = { left: `${Math.max(8, left)}px`, top: `${r.bottom + 6}px` };
   }
   engineOpen.value = true;
 }
@@ -52,13 +63,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer, 
 <template>
   <form class="search-widget" @submit.prevent="submit">
     <div class="search-bar">
-      <input
-        v-model="query"
-        type="search"
-        class="search-input"
-        placeholder="搜索网页"
-        enterkeyhint="search"
-      />
       <button
         ref="triggerRef"
         type="button"
@@ -66,10 +70,26 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer, 
         :title="`当前搜索引擎：${engineName}`"
         @click="openEnginePicker"
       >
-        <span class="engine-trigger-name">{{ engineName }}</span>
-        <span class="engine-trigger-caret" aria-hidden="true">▾</span>
+        <span class="engine-badge" :key="engine">
+          <span class="engine-letter" aria-hidden="true">{{ engineName.charAt(0) }}</span>
+          <img :src="engineDef.icon" :alt="engineName" class="engine-icon" draggable="false" @load="onIconLoaded" @error="onIconError" />
+        </span>
       </button>
-      <button type="submit" class="search-submit" aria-label="搜索">搜索</button>
+
+      <input
+        v-model="query"
+        type="search"
+        class="search-input"
+        placeholder="搜索网页"
+        enterkeyhint="search"
+      />
+
+      <button type="submit" class="search-submit" aria-label="搜索">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="16.5" y1="16.5" x2="21" y2="21" />
+        </svg>
+      </button>
     </div>
 
     <Teleport to="body">
@@ -87,7 +107,11 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer, 
           :class="{ active: item.id === engine }"
           @click="selectEngine(item.id)"
         >
-          {{ item.name }}
+          <span class="engine-badge">
+            <span class="engine-letter" aria-hidden="true">{{ item.name.charAt(0) }}</span>
+            <img :src="item.icon" :alt="item.name" class="engine-icon" draggable="false" @load="onIconLoaded" @error="onIconError" />
+          </span>
+          <span class="engine-option-name">{{ item.name }}</span>
         </button>
       </div>
     </Teleport>
@@ -95,103 +119,137 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer, 
 </template>
 
 <style scoped>
+/* 外层垂直水平居中：磁贴变大时搜索条保持固定尺寸，仅上下留白，绝不拉伸变形 */
 .search-widget {
   display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
+  padding: 14px;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
-/* 输入框主导：一条横贯整块的搜索条，而非占满的大胶囊 */
+/* 一条固定高度的搜索条：Win8 无边框风格——直角、无填充、仅底部一条细线 */
 .search-bar {
   display: flex;
-  align-items: stretch;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  height: 100%;
-  padding: 6%;
+  max-width: 520px;
+  height: 44px;
+  padding: 0 4px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.3);
+  background: transparent;
   box-sizing: border-box;
+}
+
+.engine-trigger {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.engine-trigger:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+/* 图标位：首字母文字打底，favicon 加载成功后覆盖其上，加载失败则露出首字母 */
+.engine-badge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+}
+
+.engine-letter {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.engine-icon {
+  position: absolute;
+  inset: 0;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .search-input {
   flex: 1;
   min-width: 0;
-  padding: 0 12px;
+  height: 100%;
+  padding: 0;
   border: none;
-  border-radius: 6px;
-  background: rgb(255 255 255 / 0.16);
+  background: transparent;
   color: #fff;
-  font-size: clamp(12px, 8cqh, 20px);
+  font-size: 14px;
   font-family: inherit;
   outline: none;
 }
 
 .search-input::placeholder {
-  color: rgb(255 255 255 / 0.65);
-}
-
-.search-input:focus {
-  background: rgb(255 255 255 / 0.26);
-}
-
-/* 引擎触发：紧凑小按钮，点击弹出选择，不常驻一排 */
-.engine-trigger {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 8px;
-  border: 1px solid rgb(255 255 255 / 0.3);
-  border-radius: 6px;
-  background: transparent;
-  color: rgb(255 255 255 / 0.85);
-  font-size: clamp(10px, 5cqh, 13px);
-  font-family: inherit;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.engine-trigger-caret {
-  font-size: 0.8em;
+  color: rgb(255 255 255 / 0.55);
 }
 
 .search-submit {
   flex: 0 0 auto;
-  padding: 0 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: none;
-  border-radius: 6px;
-  background: rgb(255 255 255 / 0.9);
-  color: #1b1e26;
-  font-size: clamp(11px, 6cqh, 15px);
-  font-weight: 600;
-  font-family: inherit;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
   cursor: pointer;
+}
+
+.search-submit:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.search-submit svg {
+  width: 18px;
+  height: 18px;
 }
 </style>
 
 <style>
-/* 引擎选择弹窗（挂 body，避免被磁块裁剪） */
+/* 引擎选择弹窗（挂 body，避免被磁块裁剪）：Win8 直角、扁平 */
 .engine-popup {
   position: fixed;
   z-index: 10000;
   display: flex;
   flex-direction: column;
-  min-width: 132px;
-  padding: 6px;
-  border-radius: 10px;
+  min-width: 168px;
+  padding: 4px;
+  border-radius: 0;
   background: rgb(28 30 38 / 0.98);
-  border: 1px solid rgb(255 255 255 / 0.16);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
 }
 
 .engine-option {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
   color: rgb(255 255 255 / 0.9);
-  font-size: 14px;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -202,8 +260,11 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocPointer, 
 }
 
 .engine-option.active {
-  background: rgb(255 255 255 / 0.18);
+  background: var(--accent);
   color: #fff;
-  font-weight: 600;
+}
+
+.engine-option-name {
+  font-size: 14px;
 }
 </style>
