@@ -12,12 +12,18 @@ export function domainOf(url: string): string {
 }
 
 /**
- * 生成站点的 favicon 候选地址：
- * 仅使用网站自身的 /favicon.ico（浏览器约定路径），不借助第三方图标服务，
- * 避免拿到第三方缓存/占位图标。加载失败时由调用方降级到 emoji / 名称首字。
+ * 生成站点的 favicon 候选地址（按清晰度降序），全部取自站点自身，不借助第三方图标服务：
+ * 1. /apple-touch-icon.png —— iOS 约定路径，通常为 180px 高清图，适合磁块大图展示；
+ * 2. /apple-touch-icon-precomposed.png —— 同上的无预合成变体；
+ * 3. /favicon.ico —— 浏览器约定路径，常见 16–32px，作为最终回退。
+ * 全部失败时由调用方降级到 emoji / 名称首字。
  */
 export function faviconCandidates(url: string): string[] {
   const domain = domainOf(url);
   if (!domain) return [];
-  return [`https://${domain}/favicon.ico`];
+  return [
+    `https://${domain}/apple-touch-icon.png`,
+    `https://${domain}/apple-touch-icon-precomposed.png`,
+    `https://${domain}/favicon.ico`,
+  ];
 }

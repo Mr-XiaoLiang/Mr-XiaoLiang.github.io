@@ -98,6 +98,8 @@ const emit = defineEmits<{
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
+  /* 让 emoji / 首字等文本图标能按磁块尺寸（cqw）缩放 */
+  container-type: size;
 }
 
 .tile-icon-center {
@@ -105,20 +107,20 @@ const emit = defineEmits<{
   justify-content: center;
 }
 
-/* 图标尺寸用 max-width/max-height 分别相对宽高约束（非 center 留 12%、center 留 18% 边距），
-   避免 padding 百分比随磁块宽度翻倍而在横条/竖条上把图标压小 */
+/* 大图：图标强制放大到占满磁块绝大部分（object-fit: contain 保持比例），
+   不再用 width:auto 让 favicon 保持 16px 小图缩在中间 */
 .tile-icon img,
 .tile-icon svg {
-  max-width: 76%;
-  max-height: 76%;
-  width: auto;
-  height: auto;
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
 }
 
 .tile-icon-center img,
 .tile-icon-center svg {
-  max-width: 64%;
-  max-height: 64%;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
 }
 
 .tile-initial {
@@ -127,7 +129,7 @@ const emit = defineEmits<{
   width: 100%;
   height: 100%;
   font-weight: 600;
-  font-size: 140%;
+  font-size: 40cqw;
 }
 
 .tile-emoji {
@@ -135,7 +137,7 @@ const emit = defineEmits<{
   place-items: center;
   width: 100%;
   height: 100%;
-  font-size: 150%;
+  font-size: 48cqw;
   line-height: 1;
 }
 

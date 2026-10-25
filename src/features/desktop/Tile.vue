@@ -167,7 +167,7 @@ function activate() {
 <template>
   <div
     class="tile"
-    :class="{ 'tile-editing': editing, 'tile-library': isLibrary }"
+    :class="{ 'tile-editing': editing, 'tile-library': isLibrary, 'tile-flipping': flipping }"
     :style="{
       gridColumn: `${col + 1} / span ${displayCols}`,
       gridRow: `${row + 1} / span ${displayRows}`,
@@ -187,27 +187,8 @@ function activate() {
         transform: `scale(${contentScale})`,
       }"
     >
-      <div class="tile-flip" :class="{ 'tile-flipping': flipping }">
+      <div class="tile-flip">
         <TileFace
-          class="tile-face tile-front"
-          :app="app"
-          :widget="widget"
-          :full-icon="fullIcon"
-          :color="color"
-          :name="name"
-          :name-size="nameSize"
-          :is-library="isLibrary"
-          :is-settings="isSettings"
-          :is-library-live="isLibraryLive"
-          :show-live="showLive"
-          :show-name="showName"
-          :is-big="isBig"
-          :favicon-failed="faviconFailedId === tileId"
-          :component="definition?.component"
-          @favicon-failed="faviconFailedId = tileId"
-        />
-        <TileFace
-          class="tile-face tile-back"
           :app="app"
           :widget="widget"
           :full-icon="fullIcon"
@@ -255,7 +236,7 @@ function activate() {
   -webkit-tap-highlight-color: transparent;
   transition:
     filter 0.15s ease,
-    transform 0.15s ease;
+    transform 0.35s ease;
 }
 
 .tile:hover {
@@ -263,7 +244,15 @@ function activate() {
 }
 
 .tile:active {
-  transform: scale(0.97);
+  filter: brightness(0.94);
+}
+
+/* 框架级翻转：整个磁贴（含背景色块与内容）绕 Y 轴翻转，与小组件/图标内容解耦；
+   翻转超过 90° 时由 backface-visibility 隐藏，不渲染第二个实例 */
+.tile.tile-flipping {
+  transform: perspective(900px) rotateY(180deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .tile-editing {
@@ -297,29 +286,10 @@ function activate() {
   transform-origin: top left;
 }
 
-/* 卡片翻转容器：占据磁块全幅，透视用 transform 内联表达，避免把 perspective 加到
-   .tile 上令其建立 stacking context 而把手柄的 z-index 困在磁贴内部 */
+/* 内容容器：铺满缩放层。翻转特效由 .tile 框架层承担，内容层不再参与翻转 */
 .tile-flip {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
-  transform: perspective(900px) rotateY(0deg);
-  transition: transform 0.35s ease;
-}
-
-.tile-flip.tile-flipping {
-  transform: perspective(900px) rotateY(180deg);
-}
-
-.tile-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.tile-back {
-  transform: rotateY(180deg);
 }
 
 .tile-remove {
