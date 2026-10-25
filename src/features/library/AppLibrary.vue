@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { pinyin } from 'pinyin-pro';
 import { useConfigStore } from '../../stores/config';
 import { fetchPresetWidgets, type PresetWidget } from '../../core/presets';
 import { listWidgets, sizeLabel } from '../../widgets';
@@ -75,10 +76,15 @@ onMounted(async () => {
   nextTick(() => searchInput.value?.focus());
 });
 
-/** 应用按首字母分组：拉丁字母取大写首字母，其余归入 # */
+/** 应用按首字母分组：拉丁字母取大写首字母，汉字取拼音首字母，其余归入 # */
 function initialOf(name: string): string {
   const first = name.trim().charAt(0) ?? '';
-  return /[a-z]/i.test(first) ? first.toUpperCase() : '#';
+  if (/[a-z]/i.test(first)) return first.toUpperCase();
+  if (/[\u4e00-\u9fff]/.test(first)) {
+    const letter = pinyin(first, { pattern: 'first', toneType: 'none', type: 'string' });
+    if (letter) return letter.charAt(0).toUpperCase();
+  }
+  return '#';
 }
 
 const filteredApps = computed<AppItem[]>(() => {
