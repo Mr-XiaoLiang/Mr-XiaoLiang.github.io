@@ -79,15 +79,16 @@ onBeforeUnmount(pause);
   font-weight: 400;
 }
 
-/* 大字号计时：Metro 细体，重心是时间 */
+/* 大字号计时：Metro 细体；"00:00.00" 八字符，字号以宽度为主约束避免溢出磁块 */
 .sw-time {
   color: #fff;
   font-weight: 300;
-  font-size: clamp(24px, min(38cqh, 40cqw), 110px);
+  font-size: clamp(22px, min(34cqh, 18cqw), 72px);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   letter-spacing: 0.01em;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .sw-actions {

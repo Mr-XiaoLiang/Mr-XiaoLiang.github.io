@@ -49,7 +49,7 @@ const result = computed(() => {
   if (!fromRate || !toRate) return '';
   const converted = (value / fromRate) * toRate;
   if (!Number.isFinite(converted)) return '';
-  return String(Math.round(converted * 1e6) / 1e6);
+  return String(Math.round(converted * 1e4) / 1e4);
 });
 </script>
 

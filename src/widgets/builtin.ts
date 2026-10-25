@@ -42,8 +42,8 @@ import currencyModule from './builtin/currency';
 import currencyManifest from './builtin/currency/manifest.json';
 import hitokotoModule from './builtin/hitokoto';
 import hitokotoManifest from './builtin/hitokoto/manifest.json';
-import dailyEnglishModule from './builtin/daily-english';
-import dailyEnglishManifest from './builtin/daily-english/manifest.json';
+import poemModule from './builtin/poem';
+import poemManifest from './builtin/poem/manifest.json';
 
 /** 注册全部内置小组件（应在应用启动时执行一次） */
 export function installBuiltinWidgets(): void {
@@ -64,5 +64,5 @@ export function installBuiltinWidgets(): void {
   registerBuiltin(weatherManifest, weatherModule);
   registerBuiltin(currencyManifest, currencyModule);
   registerBuiltin(hitokotoManifest, hitokotoModule);
-  registerBuiltin(dailyEnglishManifest, dailyEnglishModule);
+  registerBuiltin(poemManifest, poemModule);
 }

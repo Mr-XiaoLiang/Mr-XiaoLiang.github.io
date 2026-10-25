@@ -1,8 +1,8 @@
 {
   "protocol": 1,
-  "id": "daily-english",
-  "name": "每日英语",
-  "description": "每日一句英语与中文释义",
+  "id": "poem",
+  "name": "诗词",
+  "description": "每日一句古诗词，附出处",
   "minSize": { "cols": 2, "rows": 2 },
   "defaultSize": { "cols": 2, "rows": 2 },
   "quickSizes": [

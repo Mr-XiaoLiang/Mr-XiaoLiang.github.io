@@ -113,14 +113,15 @@ onMounted(loadWeather);
   outline: none;
 }
 
-/* 大字号温度：Metro 细体，重心是数字 */
+/* 大字号温度：Metro 细体；字号以宽度为主约束，负温度等多字符时也不溢出磁块 */
 .weather-temp {
   color: #fff;
   font-weight: 300;
-  font-size: clamp(34px, min(46cqh, 46cqw), 130px);
+  font-size: clamp(30px, min(42cqh, 30cqw), 96px);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .weather-desc {

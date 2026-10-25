@@ -1,8 +1,8 @@
 import type { WidgetModule } from '../../protocol';
-import DailyEnglishWidget from './DailyEnglishWidget.vue';
+import PoemWidget from './PoemWidget.vue';
 
 const module: WidgetModule = {
-  component: DailyEnglishWidget,
+  component: PoemWidget,
 };
 
 export default module;

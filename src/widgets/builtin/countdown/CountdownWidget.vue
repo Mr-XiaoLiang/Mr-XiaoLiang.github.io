@@ -148,9 +148,10 @@ function cancel(): void {
 .cd-number {
   color: #fff;
   font-weight: 300;
-  font-size: clamp(28px, min(34cqh, 34cqw), 110px);
+  font-size: clamp(26px, min(32cqh, 24cqw), 88px);
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  max-width: 100%;
 }
 
 .cd-unit {
@@ -175,12 +176,14 @@ function cancel(): void {
   font-size: clamp(12px, 6cqh, 15px);
 }
 
-/* 编辑态：Win8 无边框输入——仅底部一条细线 */
+/* 编辑态：独立背景层与显示态内容明确分层，不与磁块底色混叠 */
 .cd-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%;
+  padding: 10px 12px;
+  background: rgb(0 0 0 / 0.25);
 }
 
 .cd-input {
