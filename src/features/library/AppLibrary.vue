@@ -38,11 +38,13 @@ const searchInput = ref<HTMLInputElement | null>(null);
 const menuApp = ref<AppItem | null>(null);
 let pressTimer = 0;
 
-/** favicon 全部候选失败的应用 id，降级为首字色块 */
-const faviconFailedId = ref('');
+/** favicon 全部候选失败的应用 id 集合，每个应用独立记录，失败后降级为 emoji / 首字 */
+const faviconFailedIds = ref<Set<string>>(new Set());
 
 function onFaviconFailed(appId: string) {
-  faviconFailedId.value = appId;
+  const next = new Set(faviconFailedIds.value);
+  next.add(appId);
+  faviconFailedIds.value = next;
 }
 
 function cancelMenuPress() {
@@ -280,7 +282,7 @@ onBeforeUnmount(() => {
           <span class="row-icon" :style="{ background: app.color || tileColorFor(app.id) }">
             <img v-if="app.icon" :src="app.icon" alt="" draggable="false" />
             <FaviconImage
-              v-else-if="app.url && faviconFailedId !== app.id"
+              v-else-if="app.url && !faviconFailedIds.has(app.id)"
               :url="app.url"
               alt=""
               @failed="onFaviconFailed(app.id)"
