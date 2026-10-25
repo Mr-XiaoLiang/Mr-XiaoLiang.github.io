@@ -285,6 +285,7 @@ onBeforeUnmount(() => {
               alt=""
               @failed="onFaviconFailed(app.id)"
             />
+            <span v-else-if="app.emoji" class="row-emoji">{{ app.emoji }}</span>
             <span v-else>{{ app.name.trim().charAt(0).toUpperCase() }}</span>
           </span>
           <span class="row-name">{{ app.name }}</span>
@@ -555,6 +556,11 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.row-emoji {
+  font-size: 20px;
+  line-height: 1;
 }
 
 .row-name {

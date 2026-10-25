@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useConfigStore } from '../../stores/config';
 import { tileColorFor } from '../../core/theme';
 import { LIBRARY_TILE_ID, SETTINGS_TILE_ID, type AppItem } from '../../core/types';
+import FaviconImage from './FaviconImage.vue';
 
 const props = defineProps<{
   /** 磁贴主色（深浅色块据此生成） */
@@ -97,6 +98,15 @@ function onIconError(event: Event) {
   (event.target as HTMLImageElement).style.display = 'none';
 }
 
+/** favicon 全部候选失败的应用 id，失败后该应用降级为 emoji / 首字 */
+const faviconFailed = ref<Set<string>>(new Set());
+
+function onFaviconFailed(app: AppItem) {
+  const next = new Set(faviconFailed.value);
+  next.add(app.id);
+  faviconFailed.value = next;
+}
+
 onMounted(() => {
   seed(4);
   // 停顿约 3.5 秒后翻转一批，给用户看清翻转结果的机会
@@ -112,8 +122,17 @@ onBeforeUnmount(() => window.clearInterval(timer));
       <div class="flip-inner" :class="{ flipped: cell.flipped }">
         <div class="flip-face flip-front" :style="{ background: cell.shade }"></div>
         <div class="flip-face flip-back" :style="{ background: backColor(cell) }">
-          <span v-if="cell.app" class="app-initial">{{ initialOf(cell.app) }}</span>
-          <img v-if="cell.app?.icon" :src="cell.app.icon" alt="" draggable="false" @error="onIconError" />
+          <template v-if="cell.app">
+            <img v-if="cell.app.icon" :src="cell.app.icon" alt="" draggable="false" @error="onIconError" />
+            <FaviconImage
+              v-else-if="cell.app.url && !faviconFailed.has(cell.app.id)"
+              :url="cell.app.url"
+              alt=""
+              @failed="onFaviconFailed(cell.app)"
+            />
+            <span v-else-if="cell.app.emoji" class="app-emoji">{{ cell.app.emoji }}</span>
+            <span v-else class="app-initial">{{ initialOf(cell.app) }}</span>
+          </template>
         </div>
       </div>
     </div>
@@ -178,6 +197,11 @@ onBeforeUnmount(() => window.clearInterval(timer));
 .app-initial {
   font-size: clamp(14px, 9cqw, 30px);
   font-weight: 600;
+  line-height: 1;
+}
+
+.app-emoji {
+  font-size: clamp(14px, 9cqw, 30px);
   line-height: 1;
 }
 </style>

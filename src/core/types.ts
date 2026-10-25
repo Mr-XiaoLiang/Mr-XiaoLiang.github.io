@@ -43,6 +43,8 @@ export interface AppItem {
   icon: string;
   /** 全覆盖图，优先于 icon 展示，与 icon 互斥 */
   fullIcon?: string;
+  /** 表情符号图标，作为文本图标展示（优先于 favicon 抓取） */
+  emoji?: string;
   /** 磁块背景色，为空时使用主题色 */
   color?: string;
   description?: string;

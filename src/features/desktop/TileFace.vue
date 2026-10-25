@@ -57,6 +57,7 @@ const emit = defineEmits<{
         :alt="app?.name ?? ''"
         @failed="emit('favicon-failed')"
       />
+      <span v-else-if="app?.emoji" class="tile-emoji">{{ app.emoji }}</span>
       <span v-else class="tile-initial">{{ (app?.name ?? name ?? '?').trim().charAt(0).toUpperCase() }}</span>
     </div>
   </template>
@@ -120,6 +121,15 @@ const emit = defineEmits<{
   height: 100%;
   font-weight: 600;
   font-size: 140%;
+}
+
+.tile-emoji {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 150%;
+  line-height: 1;
 }
 
 .tile-name {
