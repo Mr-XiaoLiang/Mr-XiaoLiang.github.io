@@ -1,0 +1,14 @@
+{
+  "protocol": 1,
+  "id": "todo",
+  "name": "待办",
+  "description": "待办清单，支持勾选完成、底部新增与删除条目",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 2, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 3 },
+    { "cols": 4, "rows": 4 }
+  ]
+}

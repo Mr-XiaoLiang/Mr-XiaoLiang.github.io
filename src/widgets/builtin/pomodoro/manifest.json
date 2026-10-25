@@ -1,0 +1,13 @@
+{
+  "protocol": 1,
+  "id": "pomodoro",
+  "name": "番茄钟",
+  "description": "工作与休息循环计时器",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 2, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 3 }
+  ]
+}

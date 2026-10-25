@@ -1,0 +1,13 @@
+{
+  "protocol": 1,
+  "id": "random",
+  "name": "随机数",
+  "description": "骰子与随机数生成",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 2, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 2 },
+    { "cols": 3, "rows": 3 }
+  ]
+}

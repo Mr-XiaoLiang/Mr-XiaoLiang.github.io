@@ -37,7 +37,14 @@ const emit = defineEmits<{
   <img v-if="fullIcon" class="tile-full" :src="fullIcon" :alt="app?.name ?? ''" draggable="false" />
   <template v-else>
     <LibraryLiveTile v-if="isLibraryLive" class="tile-live" :tile-color="color" />
-    <component :is="component" v-else-if="showLive && widget" v-bind="widget.props" class="tile-live" />
+    <!-- 注入实例 id：多实例小组件（如便签）据以区分自身；未声明该 prop 的小组件透传为 attr，无副作用 -->
+    <component
+      :is="component"
+      v-else-if="showLive && widget"
+      v-bind="widget.props"
+      :widget-id="widget.id"
+      class="tile-live"
+    />
     <div v-else class="tile-icon" :class="{ 'tile-icon-center': !isBig }">
       <svg v-if="isLibrary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
         <rect x="3.5" y="3.5" width="7" height="7" fill="currentColor" stroke="none" />

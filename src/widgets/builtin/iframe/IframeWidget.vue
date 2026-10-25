@@ -85,7 +85,7 @@ function openExternal() {
   flex: 0 0 auto;
   padding: 3px 10px;
   border: none;
-  border-radius: 999px;
+  border-radius: 0;
   background: rgb(255 255 255 / 0.85);
   color: #1b1e26;
   font-size: 11px;

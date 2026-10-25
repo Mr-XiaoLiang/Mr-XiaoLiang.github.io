@@ -1,0 +1,14 @@
+{
+  "protocol": 1,
+  "id": "countdown",
+  "name": "倒计时",
+  "description": "设定目标日期，显示剩余天数",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 3, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 2 },
+    { "cols": 4, "rows": 2 },
+    { "cols": 4, "rows": 3 }
+  ]
+}

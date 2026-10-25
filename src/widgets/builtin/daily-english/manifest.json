@@ -1,0 +1,13 @@
+{
+  "protocol": 1,
+  "id": "daily-english",
+  "name": "每日英语",
+  "description": "每日一句英语与中文释义",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 2, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 3 }
+  ]
+}

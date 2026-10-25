@@ -1,0 +1,14 @@
+{
+  "protocol": 1,
+  "id": "note",
+  "name": "便签",
+  "description": "自由文本便签，每个实例独立保存内容",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 2, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 4, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 4 }
+  ]
+}

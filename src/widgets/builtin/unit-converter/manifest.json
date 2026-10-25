@@ -1,0 +1,13 @@
+{
+  "protocol": 1,
+  "id": "unit-converter",
+  "name": "单位换算",
+  "description": "长度、重量、温度、面积换算",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 3, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 3, "rows": 2 },
+    { "cols": 4, "rows": 3 }
+  ]
+}

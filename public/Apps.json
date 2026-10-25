@@ -1,7 +1,60 @@
 [
-    {
-        "name":"Baidu",
-        "url":"https://www.baidu.com",
-        "description":"百度搜索引擎"
-    }
+  { "name": "Google", "url": "https://www.google.com", "emoji": "🔍", "category": "搜索", "description": "谷歌搜索" },
+  { "name": "Bing", "url": "https://www.bing.com", "emoji": "🔎", "category": "搜索", "description": "必应搜索" },
+  { "name": "百度", "url": "https://www.baidu.com", "emoji": "🔍", "category": "搜索", "description": "百度搜索" },
+  { "name": "知乎", "url": "https://www.zhihu.com", "emoji": "💡", "category": "搜索", "description": "中文问答社区" },
+  { "name": "豆瓣", "url": "https://www.douban.com", "emoji": "📚", "category": "搜索", "description": "书影音社区" },
+  { "name": "微博", "url": "https://weibo.com", "emoji": "📰", "category": "搜索", "description": "新浪微博" },
+
+  { "name": "GitHub", "url": "https://github.com", "emoji": "🐙", "category": "开发者", "description": "代码托管平台" },
+  { "name": "Stack Overflow", "url": "https://stackoverflow.com", "emoji": "📚", "category": "开发者", "description": "编程问答社区" },
+  { "name": "MDN", "url": "https://developer.mozilla.org", "emoji": "📖", "category": "开发者", "description": "Web 开发文档" },
+  { "name": "npm", "url": "https://www.npmjs.com", "emoji": "📦", "category": "开发者", "description": "JavaScript 包管理" },
+  { "name": "LeetCode", "url": "https://leetcode.cn", "emoji": "💻", "category": "开发者", "description": "算法练习平台" },
+  { "name": "掘金", "url": "https://juejin.cn", "emoji": "⛏️", "category": "开发者", "description": "开发者社区" },
+  { "name": "V2EX", "url": "https://www.v2ex.com", "emoji": "💬", "category": "开发者", "description": "创意工作者社区" },
+  { "name": "Gitee", "url": "https://gitee.com", "emoji": "🐙", "category": "开发者", "description": "代码托管平台" },
+
+  { "name": "ChatGPT", "url": "https://chatgpt.com", "emoji": "🤖", "category": "AI", "description": "OpenAI 对话助手" },
+  { "name": "Claude", "url": "https://claude.ai", "emoji": "✨", "category": "AI", "description": "Anthropic 对话助手" },
+  { "name": "Gemini", "url": "https://gemini.google.com", "emoji": "💎", "category": "AI", "description": "Google 对话助手" },
+  { "name": "Kimi", "url": "https://kimi.moonshot.cn", "emoji": "🚀", "category": "AI", "description": "月之暗面对话助手" },
+  { "name": "豆包", "url": "https://www.doubao.com", "emoji": "🫘", "category": "AI", "description": "字节跳动对话助手" },
+  { "name": "通义千问", "url": "https://tongyi.aliyun.com", "emoji": "🧠", "category": "AI", "description": "阿里对话助手" },
+
+  { "name": "哔哩哔哩", "url": "https://www.bilibili.com", "emoji": "📺", "category": "视频", "description": "视频弹幕网站" },
+  { "name": "YouTube", "url": "https://www.youtube.com", "emoji": "▶️", "category": "视频", "description": "视频分享平台" },
+  { "name": "爱奇艺", "url": "https://www.iqiyi.com", "emoji": "🎬", "category": "视频", "description": "在线视频平台" },
+  { "name": "腾讯视频", "url": "https://v.qq.com", "emoji": "🎬", "category": "视频", "description": "在线视频平台" },
+
+  { "name": "网易云音乐", "url": "https://music.163.com", "emoji": "🎵", "category": "音乐", "description": "在线音乐平台" },
+  { "name": "QQ音乐", "url": "https://y.qq.com", "emoji": "🎶", "category": "音乐", "description": "在线音乐平台" },
+  { "name": "Spotify", "url": "https://open.spotify.com", "emoji": "🎧", "category": "音乐", "description": "在线音乐平台" },
+
+  { "name": "Notion", "url": "https://www.notion.so", "emoji": "📝", "category": "效率", "description": "笔记与协作" },
+  { "name": "语雀", "url": "https://www.yuque.com", "emoji": "📝", "category": "效率", "description": "知识库与文档" },
+  { "name": "飞书", "url": "https://www.feishu.cn", "emoji": "📄", "category": "效率", "description": "协作办公平台" },
+  { "name": "腾讯文档", "url": "https://docs.qq.com", "emoji": "📄", "category": "效率", "description": "在线文档" },
+
+  { "name": "Gmail", "url": "https://mail.google.com", "emoji": "✉️", "category": "邮箱云盘", "description": "Google 邮箱" },
+  { "name": "QQ邮箱", "url": "https://mail.qq.com", "emoji": "📧", "category": "邮箱云盘", "description": "腾讯邮箱" },
+  { "name": "百度网盘", "url": "https://pan.baidu.com", "emoji": "☁️", "category": "邮箱云盘", "description": "云存储服务" },
+  { "name": "阿里云盘", "url": "https://www.alipan.com", "emoji": "☁️", "category": "邮箱云盘", "description": "云存储服务" },
+  { "name": "OneDrive", "url": "https://onedrive.live.com", "emoji": "☁️", "category": "邮箱云盘", "description": "微软云存储" },
+
+  { "name": "淘宝", "url": "https://www.taobao.com", "emoji": "🛒", "category": "购物", "description": "网络购物平台" },
+  { "name": "京东", "url": "https://www.jd.com", "emoji": "🛒", "category": "购物", "description": "网络购物平台" },
+  { "name": "拼多多", "url": "https://www.pinduoduo.com", "emoji": "🛒", "category": "购物", "description": "网络购物平台" },
+
+  { "name": "少数派", "url": "https://sspai.com", "emoji": "🖊️", "category": "资讯", "description": "数字生活媒体" },
+  { "name": "36氪", "url": "https://36kr.com", "emoji": "📈", "category": "资讯", "description": "科技商业媒体" },
+  { "name": "IT之家", "url": "https://www.ithome.com", "emoji": "💻", "category": "资讯", "description": "科技资讯网站" },
+
+  { "name": "Coursera", "url": "https://www.coursera.org", "emoji": "🎓", "category": "学习", "description": "在线课程平台" },
+  { "name": "中国大学MOOC", "url": "https://www.icourse163.org", "emoji": "🎓", "category": "学习", "description": "慕课学习平台" },
+
+  { "name": "高德地图", "url": "https://www.amap.com", "emoji": "🗺️", "category": "生活", "description": "地图与导航" },
+  { "name": "12306", "url": "https://www.12306.cn", "emoji": "🚄", "category": "生活", "description": "铁路售票" },
+  { "name": "携程", "url": "https://www.ctrip.com", "emoji": "✈️", "category": "生活", "description": "旅行预订" },
+  { "name": "美团", "url": "https://www.meituan.com", "emoji": "🍔", "category": "生活", "description": "本地生活服务" }
 ]

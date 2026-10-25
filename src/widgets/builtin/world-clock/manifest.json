@@ -1,0 +1,14 @@
+{
+  "protocol": 1,
+  "id": "world-clock",
+  "name": "世界时钟",
+  "description": "多时区时间对照",
+  "minSize": { "cols": 2, "rows": 2 },
+  "defaultSize": { "cols": 4, "rows": 2 },
+  "quickSizes": [
+    { "cols": 2, "rows": 2 },
+    { "cols": 4, "rows": 2 },
+    { "cols": 3, "rows": 3 },
+    { "cols": 4, "rows": 3 }
+  ]
+}
