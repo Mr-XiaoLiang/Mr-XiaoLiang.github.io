@@ -1,4 +1,4 @@
-# MrUserPage
+# Pop Home
 
 Windows 8 风格的静态个人主页。部署于 GitHub UserPage，全部个性化数据保存在浏览器本地，无后端。
 
@@ -72,7 +72,7 @@ Windows 8 风格的静态个人主页。部署于 GitHub UserPage，全部个性
 
 ## 自定义小组件（zip 导入）
 
-用户制作完成的小组件打包为 `.zip` 后，在「应用库 → 小组件 → 自定义小组件 → 导入小组件」中直接导入，即时生效。压缩包需包含 `manifest.json` 与入口文件 `index.js`（或 `index.mjs`），遵循与内置小组件相同的协议。入口文件是自包含 ES 模块，通过全局 `MrUserPageWidget` 获取 Vue 运行时与压缩包资源。
+用户制作完成的小组件打包为 `.zip` 后，在「应用库 → 小组件 → 自定义小组件 → 导入小组件」中直接导入，即时生效。压缩包需包含 `manifest.json` 与入口文件 `index.js`（或 `index.mjs`），遵循与内置小组件相同的协议。入口文件是自包含 ES 模块，通过全局 `PopHomeWidget` 获取 Vue 运行时与压缩包资源。
 
 接入说明与完整示例见 `public/widget-docs.html`（部署后即 `https://…/widget-docs.html`），入口旁提供「接入说明」与「复制说明页链接」，可直接把该页链接发给 AI 代为编写小组件。
 

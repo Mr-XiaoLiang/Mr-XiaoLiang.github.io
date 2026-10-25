@@ -4,9 +4,9 @@
  * 用户自定义小组件以压缩包导入，入口代码文件是运行时才执行的普通 ES 模块，
  * 无法像项目内代码那样直接 `import { ref } from 'vue'`（会把另一份 Vue 实例拉进来，
  * 破坏响应式）。因此框架在应用启动时把 Vue 运行时与资源解析能力挂到全局
- * `MrUserPageWidget`，入口模块只需在顶层读取它即可获得与框架同源的运行时：
+ * `PopHomeWidget`，入口模块只需在顶层读取它即可获得与框架同源的运行时：
  *
- *   const { h, ref, computed } = globalThis.MrUserPageWidget.vue;
+ *   const { h, ref, computed } = globalThis.PopHomeWidget.vue;
  *
  * 资源解析通过 `assets()` 工厂在「入口模块顶层」捕获当前压缩包的文件表，
  * 返回的解析器可随组件一起在渲染期使用，用于读取打包进压缩包的图片、数据等资源。
@@ -86,7 +86,7 @@ function createAssetResolver(files: WidgetFiles): WidgetAssetResolver {
 /** 挂载全局运行时，应用启动时执行一次 */
 export function installWidgetRuntime(): void {
   const global = globalThis as unknown as Record<string, unknown>;
-  global.MrUserPageWidget = {
+  global.PopHomeWidget = {
     vue: {
       h,
       ref,

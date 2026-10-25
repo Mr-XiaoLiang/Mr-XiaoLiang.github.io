@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
-    <title>小组件接入说明 · MrUserPage</title>
+    <title>小组件接入说明 · Pop Home</title>
     <style>
       :root {
         --flat-bg: #000;
@@ -210,7 +210,7 @@
       <header class="top">
         <div>
           <h1>小组件接入说明</h1>
-          <p class="subtitle">把一份制作完成的小组件打包为 zip，即可导入 MrUserPage 桌面。本文档同时面向人与 AI，可直接复制本页链接发给 AI 学习，由其代为编写小组件。</p>
+          <p class="subtitle">把一份制作完成的小组件打包为 zip，即可导入 Pop Home 桌面。本文档同时面向人与 AI，可直接复制本页链接发给 AI 学习，由其代为编写小组件。</p>
         </div>
         <button class="copy-btn" type="button" onclick="copyLink(this)">复制本页链接</button>
       </header>
@@ -322,21 +322,21 @@
 }</code></pre>
         <div class="note warn">
           <strong>组件必须从运行时获取 Vue，不得 <code>import</code> 'vue'</strong>。入口模块通过全局
-          <code>globalThis.MrUserPageWidget.vue</code> 获取与框架同源的 Vue 运行时，直接
+          <code>globalThis.PopHomeWidget.vue</code> 获取与框架同源的 Vue 运行时，直接
           <code>import 'vue'</code> 会引入第二份 Vue 实例，导致响应式失效。运行时接口详见第五节。
         </div>
       </section>
 
       <section>
-        <h2>五、运行时接口 MrUserPageWidget</h2>
-        <p>应用启动时把以下对象挂到全局 <code>MrUserPageWidget</code>：</p>
-        <h3>5.1 视图层 <code>MrUserPageWidget.vue</code></h3>
+        <h2>五、运行时接口 PopHomeWidget</h2>
+        <p>应用启动时把以下对象挂到全局 <code>PopHomeWidget</code>：</p>
+        <h3>5.1 视图层 <code>PopHomeWidget.vue</code></h3>
         <p>提供与框架同源的 Vue 运行时 API：</p>
         <pre><code>h, ref, computed, reactive, watch, watchEffect,
 onMounted, onBeforeUnmount, nextTick, defineComponent</code></pre>
-        <h3>5.2 资源解析 <code>MrUserPageWidget.assets()</code></h3>
+        <h3>5.2 资源解析 <code>PopHomeWidget.assets()</code></h3>
         <p>返回压缩包资源的解析器，<strong>必须在入口模块顶层作用域调用一次</strong>（它会捕获当前压缩包的文件表）：</p>
-        <pre><code>const assets = globalThis.MrUserPageWidget.assets();
+        <pre><code>const assets = globalThis.PopHomeWidget.assets();
 
 assets.url('icon.png');   // 返回资源的对象地址（object URL），可用于 &lt;img&gt; 或 fetch
 await assets.text('data.json'); // 以 UTF-8 文本读取资源内容</code></pre>
@@ -403,8 +403,8 @@ await assets.text('data.json'); // 以 UTF-8 文本读取资源内容</code></pr
   ]
 }</code></pre>
         <h3>index.js</h3>
-        <pre><code>const { h, ref } = globalThis.MrUserPageWidget.vue;
-const assets = globalThis.MrUserPageWidget.assets();
+        <pre><code>const { h, ref } = globalThis.PopHomeWidget.vue;
+const assets = globalThis.PopHomeWidget.assets();
 
 export default {
   component: {
@@ -448,7 +448,7 @@ export default {
       </section>
 
       <footer>
-        <span>MrUserPage 小组件协议 · 版本 1</span>
+        <span>Pop Home 小组件协议 · 版本 1</span>
         <button class="copy-btn" type="button" onclick="copyLink(this)">复制本页链接</button>
       </footer>
     </div>

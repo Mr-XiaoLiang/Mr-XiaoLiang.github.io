@@ -14,7 +14,7 @@ function exportConfig() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'mruserpage-config.json';
+  anchor.download = 'pophome-config.json';
   anchor.click();
   URL.revokeObjectURL(url);
   message.value = '配置已导出';
